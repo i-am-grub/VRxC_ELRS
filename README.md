@@ -53,6 +53,8 @@ There is a feature to control the race from the Race Director's transmitter by t
 
 To test to see if the backpack was bound sucessfully, naviagte the the `Race` tab within RotorHazard, and use the `DVR Rec` switch to start the race.
 
+> Note: Anytime the backpack needs to be bound to a new transmitter, it will be easiest to reflash the ESP32 with the firmware in the latest release, and then rebind. Rebinding after the device is already bound doesn't appear to work as expected.
+
 ## Settings
 
 ### Pilot Settings
@@ -152,13 +154,13 @@ Row to show lap or gap time
 
 Row to show announcements
 
-### CALIBRATION: Number of times to send message : INT
+#### CALIBRATION: Number of times to send message : INT
 
 > It is advised that the Race Director should try to find the values that work best for their group. Inceasing the number may help with dropped packets, but will decrease ideal peformance - this setting should be tuned to be as low as possible.
 
 A setting to help with dropped packets. This setting determines the number of times a message should be repeated every time it is sent.
 
-### CALIBRATION: Send delay between messages (milliseconds) : INT
+#### CALIBRATION: Send delay between messages (milliseconds) : INT
 
 > It is advised that the Race Director should try to find the values that work best for their group. Inceasing the number may help with dropped packets, but will decrease ideal peformance - this setting should be tuned to be as low as possible.
 
