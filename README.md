@@ -15,7 +15,7 @@ This is a plugin being developed for the RotorHazard timing system with the foll
 
 ### Installing RH Plugin and Backpack on ESP32
 
-To install, follow the instructions on the [latest release](https://github.com/i-am-grub/MultiGP_Toolkit/releases) of the plugin.
+To install, follow the instructions on the [latest release](https://github.com/i-am-grub/VRxC_ELRS/releases) of the plugin.
 
 ### Installing Backpack on HDZero Goggles
 
