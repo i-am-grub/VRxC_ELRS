@@ -3,9 +3,9 @@
 > WARNING: This plugin is still very much in inital developmental state. It is recommended to only install this plugin with the official release of RotorHazard v4.0.0
 
 This is a plugin being developed for the RotorHazard timing system with the following features: 
-- Send OSD messages to pilots using compatible equipment (such as the HDZero goggles)
-- [In progress] Allows for the race manager to start the race from their transmitter
-- [Future Feature] Automatically switching pilot's video channels and output power 
+- [X] Send OSD messages to pilots using compatible equipment (such as the HDZero goggles)
+- [X] Allows for the race manager to start the race from their transmitter
+- [ ] Automatically switching pilot's video channels and output power 
 
 ## Requirements
 
