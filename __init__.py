@@ -16,7 +16,7 @@ from VRxControl import VRxController
 
 logger = logging.getLogger(__name__)
 
-PLUGIN_VERSION = 'v1.0.0-beta.2'
+PLUGIN_VERSION = 'v1.0.0-beta.3-dev'
 
 HARDWARE_SETTINGS = {
     'hdzero' : {
@@ -212,7 +212,7 @@ class elrsBackpack(VRxController):
     def backpack_connector(self):
         config_messages     = [0x09, 0x0C, 0xB5]
         version_message     = [36, 88, 60, 0, 16, 0, 0, 0, 174]
-        version_response    = [36, 88, 62, 0, 16, 0]
+        version_response    = [36, 88, 62, 0]
         start_message       = [36, 88, 60, 0, 5, 3, 3, 0, 1, 0, 0, 74]
         stop_message        = [36, 88, 60, 0, 5, 3, 3, 0, 0, 5, 0, 238]
         
@@ -227,7 +227,10 @@ class elrsBackpack(VRxController):
         # Search for connected backpack
         for port in ports:
             s.port = port.device
-            s.open()
+            try:
+                s.open()
+            except:
+                continue
             s.write(version_message)
             response = s.read(len(version_response))
             if list(response) == version_response:
