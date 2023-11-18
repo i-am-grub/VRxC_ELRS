@@ -44,7 +44,8 @@ There is a feature to control the race from the Race Director's transmitter by t
     2. Open up the Backpack settings
     3. Set the AUX channel for `DVR Rec`
     > WARNING: It is not recommended to use the same AUX channel as your ARM switch. 
-    > Note: This will not not stop the ability to start recording DVR through this switch. It is just a state that the race timer packpack listens for.
+    
+    > Note: This will not not stop the ability to start recording DVR through this switch. It is just a state that the race timer's backpack listens for.
 2. Bind the Race Timer backpack to the Transmitter
     1. Start the RotorHazard server with the ESP32 connected.
     2. Navigate to the `ExpressLRS VRxC` settings panel.
