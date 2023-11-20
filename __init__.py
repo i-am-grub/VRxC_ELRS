@@ -144,10 +144,11 @@ class elrsBackpack(VRxController):
         self._backpack_queue = queue.Queue()
         Thread(target=self.backpack_connector, daemon=True).start()
 
+        self._rhapi.ui.register_quickbutton('elrs_vrxc', 'enable_bind', "Start Backpack Bind", self.activate_bind)
+        self._rhapi.ui.register_quickbutton('elrs_vrxc', 'enable_wifi', "Start Backpack WiFi", self.activate_wifi)
+
         self._rhapi.events.on(Evt.PILOT_ALTER, self.onPilotAlter)
         self._rhapi.events.on(Evt.OPTION_SET, self.setOptions)
-        self._rhapi.events.on('local_start', self.start_race)
-        self._rhapi.events.on('local_stop', self.stop_race)    
 
     def registerHandlers(self, args):
         args['register_fn'](self)
