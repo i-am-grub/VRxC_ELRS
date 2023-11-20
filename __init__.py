@@ -7,6 +7,7 @@ from enum import Enum
 from threading import Thread, Lock
 import queue
 import serial.tools.list_ports
+import gevent
 
 import RHUtils
 from eventmanager import Evt
@@ -36,8 +37,6 @@ class hardwareOptions(Enum):
 def initialize(rhapi):
 
     logger.info(PLUGIN_VERSION)
-
-    monkey_business(rhapi)
 
     controller = elrsBackpack('elrs', 'ELRS', rhapi)
 
@@ -145,9 +144,6 @@ class elrsBackpack(VRxController):
         self._backpack_queue = queue.Queue()
         Thread(target=self.backpack_connector, daemon=True).start()
 
-        self._rhapi.ui.register_quickbutton('elrs_vrxc', 'enable_bind', "Start Backpack Bind", self.activate_bind)
-        self._rhapi.ui.register_quickbutton('elrs_vrxc', 'enable_wifi', "Start Backpack WiFi", self.activate_wifi)
-
         self._rhapi.events.on(Evt.PILOT_ALTER, self.onPilotAlter)
         self._rhapi.events.on(Evt.OPTION_SET, self.setOptions)
         self._rhapi.events.on('local_start', self.start_race)
@@ -197,12 +193,12 @@ class elrsBackpack(VRxController):
 
         self._queue_lock.release()
 
-    def start_race(self, _args):
+    def start_race(self):
         start_race_args = {'start_time_s' : 10}
         if self._rhapi.race.status == RaceStatus.READY:
             self._rhapi.race.stage(start_race_args)
 
-    def stop_race(self, _args):
+    def stop_race(self):
         self._rhapi.race.stop()
 
     #
@@ -264,10 +260,10 @@ class elrsBackpack(VRxController):
             if not response:
                 pass
             elif list(response) == start_message:
-                self._rhapi.events.trigger('local_start', {})
+                gevent.spawn(self.start_race)
                 response = None
             elif list(response) == stop_message:
-                self._rhapi.events.trigger('local_stop', {})
+                gevent.spawn(self.stop_race)
                 response = None
              
             time.sleep(0.01)
@@ -690,110 +686,3 @@ class elrsBackpack(VRxController):
             for pilot_id in self._heat_data:
                 if self._heat_data[pilot_id]:
                     Thread(target=notify, args=(pilot_id,), daemon=True).start()
-
-def monkey_business(rhapi):
-    from monotonic import monotonic
-    import gevent
-    import copy
-    import types
-
-    def on(self, event, name, handler_fn, default_args=None, priority=200, unique=False):
-
-        self._evtLock.acquire()
-
-        if default_args == None:
-            default_args = {}
-
-        if event not in self.events:
-            self.events[event] = {}
-
-        self.events[event][name] = {
-            "handler_fn": handler_fn,
-            "default_args": default_args,
-            "priority": priority,
-            "unique": unique
-        }
-
-        self.eventOrder[event] = [key for key, _value in sorted(self.events[event].items(), key=lambda x: x[1]['priority'])]
-
-        self._evtLock.release()
-
-        return True
-
-    def off(self, event, name):
-
-        self._evtLock.acquire()
-
-        if event not in self.events:
-            return True
-
-        if name not in self.events[event]:
-            return True
-
-        del(self.events[event][name])
-
-        self.eventOrder[event] = [key for key, _value in sorted(self.events[event].items(), key=lambda x: x[1]['priority'])]
-        
-        self._evtLock.release()
-
-        return True
-
-    def trigger(self, event, evt_args=None):
-
-        self._evtLock.acquire()
-
-        evt_list = []
-        if event in self.eventOrder:
-            for name in self.eventOrder[event]:
-                evt_list.append([event, name])
-        if Evt.ALL in self.eventOrder:
-            for name in self.eventOrder[Evt.ALL]:
-                evt_list.append([Evt.ALL, name])
-
-        self._evtLock.release()
-
-        if len(evt_list):
-            for ev, name in evt_list:
-
-                with self._evtLock:
-                    handler = self.events[ev][name]
-                    args = copy.copy(handler['default_args'])
-
-                if evt_args:
-                    if args:
-                        args.update(evt_args)
-                    else:
-                        args = evt_args
-
-                if ev == Evt.ALL:
-                    args['_eventName'] = event
-
-                if handler['unique']:
-                    threadName = name + str(monotonic())
-                else:
-                    threadName = name
-
-                # stop any threads with same name
-                self._evtLock.acquire()
-                for token in self.eventThreads.copy():
-                    if token in self.eventThreads and self.eventThreads[token]['name'] == name:
-                        self.eventThreads[token]['thread'].kill(block=False)
-                    if token in self.eventThreads and self.eventThreads[token]['thread'].dead:
-                        self.eventThreads.pop(token, False)
-                self._evtLock.release()
-
-                if handler['priority'] < 100:
-                    self.run_handler(handler['handler_fn'], args)
-                else:
-                    greenlet = gevent.spawn(self.run_handler, handler['handler_fn'], args)
-                    with self._evtLock:
-                        self.eventThreads[greenlet.minimal_ident] = {
-                            'name': threadName,
-                            'thread': greenlet
-                            }
-                    
-    rhapi._racecontext.events._evtLock = Lock()
-    rhapi._racecontext.events.on = types.MethodType(on, rhapi._racecontext.events)
-    rhapi._racecontext.events.off = types.MethodType(off, rhapi._racecontext.events)
-    rhapi._racecontext.events.trigger = types.MethodType(trigger, rhapi._racecontext.events)
-    logger.info('Finished monkey patching events to be thread safe')
