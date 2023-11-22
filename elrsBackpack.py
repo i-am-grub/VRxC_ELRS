@@ -10,7 +10,6 @@ import serial.tools.list_ports
 import gevent
 
 import RHUtils
-from eventmanager import Evt
 from RHRace import RaceStatus
 from VRxControl import VRxController
 
@@ -35,13 +34,6 @@ class elrsBackpack(VRxController):
 
         self._backpack_queue = queue.Queue()
         Thread(target=self.backpack_connector, daemon=True).start()
-
-        self._rhapi.ui.register_quickbutton('elrs_vrxc', 'enable_bind', "Start Backpack Bind", self.activate_bind)
-        self._rhapi.ui.register_quickbutton('elrs_vrxc', 'test_osd', "Test Bound Backpack's OSD", self.test_osd)
-        self._rhapi.ui.register_quickbutton('elrs_vrxc', 'enable_wifi', "Start Backpack WiFi", self.activate_wifi)
-
-        self._rhapi.events.on(Evt.PILOT_ALTER, self.onPilotAlter)
-        self._rhapi.events.on(Evt.OPTION_SET, self.setOptions)
 
     def registerHandlers(self, args):
         args['register_fn'](self)
@@ -273,7 +265,7 @@ class elrsBackpack(VRxController):
                 self.send_display()
                 self._queue_lock.release()
 
-                time.sleep(0.4)
+                time.sleep(0.5)
 
                 self._queue_lock.acquire()
                 self.send_clear_row(row, 'hdzero')
@@ -351,12 +343,14 @@ class elrsBackpack(VRxController):
 
         heat_data = self._rhapi.db.heat_by_id(args['heat_id'])
         if heat_data and self._heat_name:
+            class_name = self._rhapi.db.raceclass_by_id(heat_data.class_id).name
             heat_name = heat_data.name
+            round_trans = self._rhapi.__('Round')
             round_num = self._rhapi.db.heat_max_round(args['heat_id']) + 1
             if round_num > 1:
-                race_name = f'x {heat_name.upper()} - ROUND {round_num} w'
+                race_name = f'x {class_name.upper()} | {heat_name.upper()} | {round_trans.upper()} {round_num} w'
             else:
-                race_name = f'x {heat_name.upper()} w'
+                race_name = f'x {class_name.upper()} | {heat_name.upper()} w'
 
         # Send stage message to all pilots
         def arm(pilot_id):

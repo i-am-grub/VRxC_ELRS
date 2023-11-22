@@ -17,6 +17,8 @@ def initialize(rhapi):
     controller = elrsBackpack.elrsBackpack('elrs', 'ELRS', rhapi)
 
     rhapi.events.on(Evt.VRX_INITIALIZE, controller.registerHandlers)
+    rhapi.events.on(Evt.PILOT_ALTER, controller.onPilotAlter)
+    rhapi.events.on(Evt.OPTION_SET, controller.setOptions)
 
     #
     # Setup UI
@@ -38,13 +40,13 @@ def initialize(rhapi):
     # Check Boxes
     #
     
-    _heat_name = UIField('_heat_name', 'Show Heat Name on Stage', field_type = UIFieldType.CHECKBOX)
+    _heat_name = UIField('_heat_name', 'Show Race Name on Stage', field_type = UIFieldType.CHECKBOX)
     rhapi.fields.register_option(_heat_name, 'elrs_vrxc')
 
-    _position_mode = UIField('_position_mode', 'Show Current Position', field_type = UIFieldType.CHECKBOX)
+    _position_mode = UIField('_position_mode', 'Show Current Position and Lap', desc='off - only shows current lap', field_type = UIFieldType.CHECKBOX)
     rhapi.fields.register_option(_position_mode, 'elrs_vrxc')
 
-    _gap_mode = UIField('_gap_mode', 'Show Gap Time', field_type = UIFieldType.CHECKBOX)
+    _gap_mode = UIField('_gap_mode', 'Show Gap Time', desc='off - shows lap time', field_type = UIFieldType.CHECKBOX)
     rhapi.fields.register_option(_gap_mode, 'elrs_vrxc')
 
     _results_mode = UIField('_results_mode', 'Show Post-Race Results', field_type = UIFieldType.CHECKBOX)
@@ -54,22 +56,22 @@ def initialize(rhapi):
     # Text Fields
     #
 
-    _racestage_message = UIField('_racestage_message', 'Race Stage Message', field_type = UIFieldType.TEXT, value="w ARM NOW x")
+    _racestage_message = UIField('_racestage_message', 'Race Stage Message', desc='lowercase letters are symbols', field_type = UIFieldType.TEXT, value="w ARM NOW x")
     rhapi.fields.register_option(_racestage_message, 'elrs_vrxc')
 
-    _racestart_message = UIField('_racestart_message', 'Race Start Message', field_type = UIFieldType.TEXT, value="w   GO!   x")
+    _racestart_message = UIField('_racestart_message', 'Race Start Message', desc='lowercase letters are symbols', field_type = UIFieldType.TEXT, value="w   GO!   x")
     rhapi.fields.register_option(_racestart_message, 'elrs_vrxc')
 
-    _pilotdone_message = UIField('_pilotdone_message', 'Pilot Done Message', field_type = UIFieldType.TEXT, value="w FINISHED! x")
+    _pilotdone_message = UIField('_pilotdone_message', 'Pilot Done Message', desc='lowercase letters are symbols', field_type = UIFieldType.TEXT, value="w FINISHED! x")
     rhapi.fields.register_option(_pilotdone_message, 'elrs_vrxc')
 
-    _racefinish_message = UIField('_racefinish_message', 'Race Finish Message', field_type = UIFieldType.TEXT, value="w FINISH LAP! x")
+    _racefinish_message = UIField('_racefinish_message', 'Race Finish Message', desc='lowercase letters are symbols', field_type = UIFieldType.TEXT, value="w FINISH LAP! x")
     rhapi.fields.register_option(_racefinish_message, 'elrs_vrxc')
 
-    _racestop_message = UIField('_racestop_message', 'Race Stop Message', field_type = UIFieldType.TEXT, value="w  LAND NOW!  x")
+    _racestop_message = UIField('_racestop_message', 'Race Stop Message', desc='lowercase letters are symbols', field_type = UIFieldType.TEXT, value="w  LAND NOW!  x")
     rhapi.fields.register_option(_racestop_message, 'elrs_vrxc')
 
-    _leader_message = UIField('_leader_message', 'Race Leader Message', field_type = UIFieldType.TEXT, value="x RACE LEADER w")
+    _leader_message = UIField('_leader_message', 'Race Leader Message', desc='lowercase letters are symbols', field_type = UIFieldType.TEXT, value="x RACE LEADER w")
     rhapi.fields.register_option(_leader_message, 'elrs_vrxc')
 
     #
@@ -100,8 +102,16 @@ def initialize(rhapi):
     _announcement_row = UIField('_announcement_row', 'Announcement Row', desc='Use rows between 0-9 or 15-17', field_type = UIFieldType.BASIC_INT, value=6)
     rhapi.fields.register_option(_announcement_row, 'elrs_vrxc')
 
-    _bp_repeat = UIField('_bp_repeat', 'Number of times to send message', desc='Field for testing peformance', field_type = UIFieldType.BASIC_INT, value=0)
+    _bp_repeat = UIField('_bp_repeat', 'Number of times to send message', desc='Field for peformance testing', field_type = UIFieldType.BASIC_INT, value=0)
     rhapi.fields.register_option(_bp_repeat, 'elrs_vrxc')
 
-    _bp_delay = UIField('_bp_delay', 'Send delay between messages', desc='Field for testing peformance in milliseconds', field_type = UIFieldType.BASIC_INT, value=0)
+    _bp_delay = UIField('_bp_delay', 'Send delay between messages', desc='Field for peformance testing in milliseconds', field_type = UIFieldType.BASIC_INT, value=0)
     rhapi.fields.register_option(_bp_delay, 'elrs_vrxc')
+
+    #
+    # Quick Buttons
+    #
+
+    rhapi.ui.register_quickbutton('elrs_vrxc', 'enable_bind', "Start Backpack Bind", controller.activate_bind)
+    rhapi.ui.register_quickbutton('elrs_vrxc', 'test_osd', "Test Bound Backpack's OSD", controller.test_osd)
+    rhapi.ui.register_quickbutton('elrs_vrxc', 'enable_wifi', "Start Backpack WiFi", controller.activate_wifi)
