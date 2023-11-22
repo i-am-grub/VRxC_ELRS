@@ -27,12 +27,13 @@ class elrsBackpack(VRxController):
     _heat_name = None
     _heat_data = {}
     _finished_pilots = []
+    _queue_full = False
 
     def __init__(self, name, label, rhapi):
         super().__init__(name, label)
         self._rhapi = rhapi
 
-        self._backpack_queue = queue.Queue()
+        self._backpack_queue = queue.Queue(maxsize=200)
         Thread(target=self.backpack_connector, daemon=True).start()
 
     def registerHandlers(self, args):
@@ -116,7 +117,14 @@ class elrsBackpack(VRxController):
                 s.open()
             except:
                 continue
-            s.write(version_message)
+
+            try:
+                s.write(version_message)
+            except:
+                logger.error('Failed to write to open serial device. Attempting to connect to new device...')
+                s.close()
+                continue
+
             response = s.read(len(version_response))
             if list(response) == version_response:
                 logger.info(f"Connected to backpack on {port.device}")
@@ -125,9 +133,10 @@ class elrsBackpack(VRxController):
             else:
                 s.close()
         else:
-            logger.info("Could not find connected backpack. Ending connector process.")
+            logger.warning("Could not find connected backpack. Ending connector thread.")
             backpack_connected = False
 
+        error_count = 0
 
         while backpack_connected:
 
@@ -141,7 +150,17 @@ class elrsBackpack(VRxController):
 
                 if message[4] not in config_messages:
                     time.sleep(delay)
-                s.write(message)
+                
+                try:
+                    s.write(message)
+                except:
+                    error_count += 1
+                    if error_count > 5:
+                        backpack_connected = False
+                        logger.error('Failed to write to backpack. Ending connector thread')
+                        s.close()
+                else:
+                    error_count = 0
 
             response = s.read(12)
 
@@ -167,6 +186,20 @@ class elrsBackpack(VRxController):
             bindingPhraseHash[0] -= 0x01
         return bindingPhraseHash
 
+    def queue_add(self, msp):
+        try:
+            self._backpack_queue.put(msp, block=False)
+        except queue.Full:
+            if not self._queue_full:
+                self._queue_full = True
+                message = 'ERROR: ELRS Backpack not responding. Please reboot the server to attempt to reconnect.'
+                self._rhapi.ui.message_alert(self._rhapi.language.__(message))
+        else:
+            if self._queue_full:
+                self._queue_full = False
+                message = 'ELRS Backpack has start responding again.'
+                self._rhapi.ui.message_notify(self._rhapi.language.__(message))
+
     def crc8_dvb_s2(self, crc, a):
         crc = crc ^ a
         for ii in range(8):
@@ -185,11 +218,10 @@ class elrsBackpack(VRxController):
         msp = [ord('$'),ord('X'),ord('<')]
         msp = msp + body
         msp.append(crc)
-
-        self._backpack_queue.put(msp, timeout=1)
+        self.queue_add(msp)
         if msp[4] not in config_messages:
             for count in range(self._repeat_count):
-                self._backpack_queue.put(msp, timeout=1)
+                self.queue_add(msp)
             
     def set_sendUID(self, bindingHash:list):
         msp = [0,0x00B5,0x00,7,0,1]
