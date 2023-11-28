@@ -21,8 +21,11 @@ class elrsBackpack(VRxController):
     
     _queue_lock = Lock()
     _delay_lock = Lock()
+    _connector_status_lock = Lock()
     _repeat_count = 0
     _send_delay = 0.05
+
+    _backpack_connected = True
     
     _heat_name = None
     _heat_data = {}
@@ -67,10 +70,10 @@ class elrsBackpack(VRxController):
         self._racestop_message = self._rhapi.db.option('_racestop_message')
         self._leader_message = self._rhapi.db.option('_leader_message')
 
-        self._racestart_uptime = self._rhapi.db.option('_racestart_uptime') * 0.1
-        self._finish_uptime = self._rhapi.db.option('_finish_uptime') * 0.1
-        self._results_uptime = self._rhapi.db.option('_results_uptime') * 0.1
-        self._announcement_uptime = self._rhapi.db.option('_announcement_uptime') * 0.1
+        self._racestart_uptime = self._rhapi.db.option('_racestart_uptime') * 1e-1
+        self._finish_uptime = self._rhapi.db.option('_finish_uptime') * 1e-1
+        self._results_uptime = self._rhapi.db.option('_results_uptime') * 1e-1
+        self._announcement_uptime = self._rhapi.db.option('_announcement_uptime') * 1e-1
 
         self._status_row = self._rhapi.db.option('_status_row')
         self._currentlap_row = self._rhapi.db.option('_currentlap_row')
@@ -79,28 +82,31 @@ class elrsBackpack(VRxController):
 
         self._repeat_count = self._rhapi.db.option('_bp_repeat')
         with self._delay_lock:
-            self._send_delay = self._rhapi.db.option('_bp_delay') * 0.001
+            self._send_delay = self._rhapi.db.option('_bp_delay') * 1e-5
 
         self._queue_lock.release()
 
     def start_race(self):
-        start_race_args = {'start_time_s' : 10}
-        if self._rhapi.race.status == RaceStatus.READY:
-            self._rhapi.race.stage(start_race_args)
+        if self._rhapi.db.option('_race_control'):
+            start_race_args = {'start_time_s' : 10}
+            if self._rhapi.race.status == RaceStatus.READY:
+                self._rhapi.race.stage(start_race_args)
 
     def stop_race(self):
-        self._rhapi.race.stop()
+        if self._rhapi.db.option('_race_control'):
+            status = self._rhapi.race.status
+            if status == RaceStatus.STAGING or status == RaceStatus.RACING:
+                self._rhapi.race.stop()
 
     #
     # Backpack communications
     #
 
+    def combine_bytes(self, a, b):
+        return (b << 8) | a
+
     def backpack_connector(self):
-        config_messages     = [0x09, 0x0C, 0xB5]
         version_message     = [36, 88, 60, 0, 16, 0, 0, 0, 174]
-        version_response    = [36, 88, 62, 0]
-        start_message       = [36, 88, 60, 0, 5, 3, 3, 0, 1, 0, 0, 74]
-        stop_message        = [36, 88, 60, 0, 5, 3, 3, 0, 0, 5, 0, 238]
         
         logger.info("Attempting to find backpack")
         
@@ -110,9 +116,13 @@ class elrsBackpack(VRxController):
                         timeout=0.01, xonxoff=0, rtscts=0,
                         write_timeout=0.01)
         
+        #
         # Search for connected backpack
+        #
+
         for port in ports:
             s.port = port.device
+            
             try:
                 s.open()
             except:
@@ -125,19 +135,39 @@ class elrsBackpack(VRxController):
                 s.close()
                 continue
 
-            response = s.read(len(version_response))
-            if list(response) == version_response:
-                logger.info(f"Connected to backpack on {port.device}")
-                backpack_connected = True
-                break
+            response = list(s.read(8))
+            if len(response) == 8:
+                if response[:3] == [ord('$'),ord('X'),ord('>')]:
+                    mode = self.combine_bytes(response[4], response[5])
+                    response_payload_length = self.combine_bytes(response[6], response[7])
+                    response_payload = list(s.read(response_payload_length))
+                    response_check_sum = list(s.read(1))
+
+                    if mode == 0x0380:
+                        logger.info(f"Connected to backpack on {port.device}")
+
+                        version_list = [chr(val) for val in response_payload]
+                        logger.info(f"Backpack version: {''.join(version_list)}")
+
+                        with self._connector_status_lock:
+                            self._backpack_connected = True
+                        break
             else:
                 s.close()
+                continue
         else:
             logger.warning("Could not find connected backpack. Ending connector thread.")
-            backpack_connected = False
+            with self._connector_status_lock:
+                self._backpack_connected = False
 
+        #
+        # Backpack connection loop
+        #
+
+        with self._connector_status_lock:
+            backpack_connected = copy.copy(self._backpack_connected)
+        
         error_count = 0
-
         while backpack_connected:
 
             self._delay_lock.acquire()
@@ -147,33 +177,39 @@ class elrsBackpack(VRxController):
             # Handle backpack comms 
             while not self._backpack_queue.empty():
                 message = self._backpack_queue.get()
-
-                if message[4] not in config_messages:
-                    time.sleep(delay)
+                time.sleep(delay)
                 
                 try:
                     s.write(message)
                 except:
                     error_count += 1
                     if error_count > 5:
-                        backpack_connected = False
                         logger.error('Failed to write to backpack. Ending connector thread')
                         s.close()
+                        with self._connector_status_lock:
+                            self._backpack_connected = False
+                        return
                 else:
                     error_count = 0
 
-            response = s.read(12)
+            packet = list(s.read(8))
+            if len(packet) == 8:
+                if packet[:3] == [ord('$'),ord('X'),ord('<')]:
+                    mode = self.combine_bytes(packet[4], packet[5])
+                    payload_length = self.combine_bytes(packet[6], packet[7])
+                    payload = list(s.read(payload_length))
+                    check_sum = list(s.read(1))
 
-            # Send message to thread to start race
-            if not response:
-                pass
-            elif list(response) == start_message:
-                gevent.spawn(self.start_race)
-                response = None
-            elif list(response) == stop_message:
-                gevent.spawn(self.stop_race)
-                response = None
-             
+                    # Monitor SET_RECORDING_STATE for controling race
+                    if mode == 0x0305:
+                        if payload[0] == 0x00:
+                            gevent.spawn(self.stop_race)
+                        elif payload[0] == 0x01:
+                            gevent.spawn(self.start_race)
+            
+            with self._connector_status_lock:
+                backpack_connected = copy.copy(self._backpack_connected)
+
             time.sleep(0.01)
 
     #
@@ -187,15 +223,18 @@ class elrsBackpack(VRxController):
         return bindingPhraseHash
 
     def queue_add(self, msp):
+        with self._connector_status_lock:
+            if self._backpack_connected is False:
+                return
         try:
             self._backpack_queue.put(msp, block=False)
         except queue.Full:
-            if not self._queue_full:
+            if self._queue_full is False:
                 self._queue_full = True
                 message = 'ERROR: ELRS Backpack not responding. Please reboot the server to attempt to reconnect.'
                 self._rhapi.ui.message_alert(self._rhapi.language.__(message))
         else:
-            if self._queue_full:
+            if self._queue_full is True:
                 self._queue_full = False
                 message = 'ELRS Backpack has start responding again.'
                 self._rhapi.ui.message_notify(self._rhapi.language.__(message))
@@ -210,8 +249,6 @@ class elrsBackpack(VRxController):
         return crc & 0xFF
     
     def send_msp(self, body):
-        config_messages = [0x09, 0x0C, 0xB5]
-
         crc = 0
         for x in body:
             crc = self.crc8_dvb_s2(crc, x)
@@ -219,7 +256,7 @@ class elrsBackpack(VRxController):
         msp = msp + body
         msp.append(crc)
         self.queue_add(msp)
-        if msp[4] not in config_messages:
+        if self.combine_bytes(msp[4], msp[5]) == 0x00B6:
             for count in range(self._repeat_count):
                 self.queue_add(msp)
             
@@ -252,6 +289,8 @@ class elrsBackpack(VRxController):
         offset = int(stringlength/2)
         if hardwaretype:
             col = int(HARDWARE_SETTINGS[hardwaretype]['row_size'] / 2) - offset
+            if col < 0:
+                col = 0
         else:
             col = 0
         return col
@@ -322,15 +361,23 @@ class elrsBackpack(VRxController):
 
         if pilot_id in self._heat_data:
             pilot_settings = {}
-            pilot_settings['hardware_type'] = self._rhapi.db.pilot_attribute_value(pilot_id, 'hardware_type')
-            logger.info(f"Pilot {pilot_id}'s hardware set to {self._rhapi.db.pilot_attribute_value(pilot_id, 'hardware_type')}")
+
+            hardware_type = self._rhapi.db.pilot_attribute_value(pilot_id, 'hardware_type')
+            logger.info(f"Pilot {pilot_id}'s hardware set to {hardware_type}")
+            if hardware_type in HARDWARE_SETTINGS:
+                pilot_settings['hardware_type'] = hardware_type
+            else:
+                self._heat_data[pilot_id] = None
+                self._queue_lock.release()
+                return
 
             bindphrase = self._rhapi.db.pilot_attribute_value(pilot_id, 'comm_elrs')
             if bindphrase:
                 UID = self.hash_phrase(bindphrase)
                 pilot_settings['UID'] = UID
             else:
-                pilot_settings = None
+                UID = self.hash_phrase(self._rhapi.db.pilot_by_id(pilot_id).callsign)
+                pilot_settings['UID'] = UID
 
             self._heat_data[pilot_id] = pilot_settings
             logger.info(f"Pilot {pilot_id}'s UID set to {UID}")
@@ -343,11 +390,7 @@ class elrsBackpack(VRxController):
         for slot in self._rhapi.db.slots_by_heat(args['heat_id']):
             if slot.pilot_id:
                 hardware_type = self._rhapi.db.pilot_attribute_value(slot.pilot_id, 'hardware_type')
-                bindphrase = self._rhapi.db.pilot_attribute_value(slot.pilot_id, 'comm_elrs')
                 if hardware_type not in HARDWARE_SETTINGS:
-                    heat_data[slot.pilot_id] = None
-                    continue
-                elif not bindphrase:
                     heat_data[slot.pilot_id] = None
                     continue
 
@@ -355,8 +398,13 @@ class elrsBackpack(VRxController):
                 pilot_settings['hardware_type'] = hardware_type
                 logger.info(f"Pilot {slot.pilot_id}'s hardware set to {self._rhapi.db.pilot_attribute_value(slot.pilot_id, 'hardware_type')}")
 
-                UID = self.hash_phrase(bindphrase)
-                pilot_settings['UID'] = UID
+                bindphrase = self._rhapi.db.pilot_attribute_value(slot.pilot_id, 'comm_elrs')
+                if bindphrase:
+                    UID = self.hash_phrase(bindphrase)
+                    pilot_settings['UID'] = UID
+                else:
+                    UID = self.hash_phrase(self._rhapi.db.pilot_by_id(slot.pilot_id).callsign)
+                    pilot_settings['UID'] = UID
                 
                 heat_data[slot.pilot_id] = pilot_settings
                 logger.info(f"Pilot {slot.pilot_id}'s UID set to {UID}")
@@ -369,14 +417,15 @@ class elrsBackpack(VRxController):
 
         # Setup heat if not done already
         with self._queue_lock:
+            self.clear_sendUID()
             self._finished_pilots = []
             if not self._heat_data:
                 self.onHeatSet(args)
 
         heat_data = self._rhapi.db.heat_by_id(args['heat_id'])
-        if heat_data and self._heat_name:
-            class_name = self._rhapi.db.raceclass_by_id(heat_data.class_id).name
-            heat_name = heat_data.name
+        class_name = self._rhapi.db.raceclass_by_id(heat_data.class_id).name
+        heat_name = heat_data.name
+        if heat_data and self._heat_name and class_name and heat_name:
             round_trans = self._rhapi.__('Round')
             round_num = self._rhapi.db.heat_max_round(args['heat_id']) + 1
             if round_num > 1:
@@ -391,7 +440,7 @@ class elrsBackpack(VRxController):
             self.send_clear()
             start_col1 = self.centerOSD(len(self._racestage_message), self._heat_data[pilot_id]['hardware_type'])
             self.send_msg(self._status_row, start_col1, self._racestage_message)
-            if self._heat_name:
+            if self._heat_name and class_name and heat_name:
                 start_col2 = self.centerOSD(len(race_name), self._heat_data[pilot_id]['hardware_type'])
                 self.send_msg(self._announcement_row, start_col2, race_name)
             self.send_display()
@@ -551,11 +600,7 @@ class elrsBackpack(VRxController):
             self._queue_lock.acquire()
             if self._heat_data[pilot_id]:
                 self.set_sendUID(self._heat_data[pilot_id]['UID'])
-                self.send_clear_row(10, self._heat_data[pilot_id]['hardware_type'])
-                self.send_clear_row(11, self._heat_data[pilot_id]['hardware_type'])
-                self.send_clear_row(12, self._heat_data[pilot_id]['hardware_type'])
-                self.send_clear_row(13, self._heat_data[pilot_id]['hardware_type'])
-                self.send_clear_row(14, self._heat_data[pilot_id]['hardware_type'])
+                self.send_clear()
                 self.send_display()
                 self.clear_sendUID()
             self._queue_lock.release()

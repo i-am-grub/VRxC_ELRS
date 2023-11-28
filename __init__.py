@@ -34,11 +34,16 @@ def initialize(rhapi):
     elrs_bindphrase = UIField(name = 'comm_elrs', label = 'ELRS BP Bindphrase', field_type = UIFieldType.TEXT)
     rhapi.fields.register_pilot_attribute(elrs_bindphrase)
 
-    rhapi.ui.register_panel('elrs_vrxc', 'ExpressLRS VRxC', 'settings', order=0)
+    rhapi.ui.register_panel('elrs_settings', 'ELRS Backpack General Settings', 'settings', order=0)
+
+    rhapi.ui.register_panel('elrs_vrxc', 'ELRS Backpack OSD Settings', 'settings', order=0)
 
     #
     # Check Boxes
     #
+
+    _race_control = UIField('_race_control', 'Race Control from Transmitter', desc='Allows the race director to remotely control races', field_type = UIFieldType.CHECKBOX)
+    rhapi.fields.register_option(_race_control, 'elrs_settings')
     
     _heat_name = UIField('_heat_name', 'Show Race Name on Stage', field_type = UIFieldType.CHECKBOX)
     rhapi.fields.register_option(_heat_name, 'elrs_vrxc')
@@ -102,16 +107,16 @@ def initialize(rhapi):
     _announcement_row = UIField('_announcement_row', 'Announcement Row', desc='Use rows between 0-9 or 15-17', field_type = UIFieldType.BASIC_INT, value=6)
     rhapi.fields.register_option(_announcement_row, 'elrs_vrxc')
 
-    _bp_repeat = UIField('_bp_repeat', 'Number of times to send message', desc='Field for peformance testing', field_type = UIFieldType.BASIC_INT, value=0)
-    rhapi.fields.register_option(_bp_repeat, 'elrs_vrxc')
+    _bp_repeat = UIField('_bp_repeat', 'Number of times to repeat messages', field_type = UIFieldType.BASIC_INT, value=0)
+    rhapi.fields.register_option(_bp_repeat, 'elrs_settings')
 
-    _bp_delay = UIField('_bp_delay', 'Send delay between messages', desc='Field for peformance testing in milliseconds', field_type = UIFieldType.BASIC_INT, value=0)
-    rhapi.fields.register_option(_bp_delay, 'elrs_vrxc')
+    _bp_delay = UIField('_bp_delay', 'Send delay between messages', desc='tens of nanoseconds', field_type = UIFieldType.BASIC_INT, value=80)
+    rhapi.fields.register_option(_bp_delay, 'elrs_settings')
 
     #
     # Quick Buttons
     #
 
-    rhapi.ui.register_quickbutton('elrs_vrxc', 'enable_bind', "Start Backpack Bind", controller.activate_bind)
-    rhapi.ui.register_quickbutton('elrs_vrxc', 'test_osd', "Test Bound Backpack's OSD", controller.test_osd)
-    rhapi.ui.register_quickbutton('elrs_vrxc', 'enable_wifi', "Start Backpack WiFi", controller.activate_wifi)
+    rhapi.ui.register_quickbutton('elrs_settings', 'enable_bind', "Start Backpack Bind", controller.activate_bind)
+    rhapi.ui.register_quickbutton('elrs_settings', 'test_osd', "Test Bound Backpack's OSD", controller.test_osd)
+    rhapi.ui.register_quickbutton('elrs_settings', 'enable_wifi', "Start Backpack WiFi", controller.activate_wifi)
