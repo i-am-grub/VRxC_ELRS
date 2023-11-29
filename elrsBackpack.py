@@ -13,7 +13,8 @@ import RHUtils
 from RHRace import RaceStatus
 from VRxControl import VRxController
 
-from plugins.VRxC_ELRS.constants import HARDWARE_SETTINGS
+from plugins.VRxC_ELRS.hardware import HARDWARE_SETTINGS
+from plugins.VRxC_ELRS.msp import msptypes, msp_message
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +107,9 @@ class elrsBackpack(VRxController):
         return (b << 8) | a
 
     def backpack_connector(self):
-        version_message     = [36, 88, 60, 0, 16, 0, 0, 0, 174]
+        version = msp_message()
+        version.set_function(msptypes.MSP_ELRS_GET_BACKPACK_VERSION)
+        version_message = version.get_msp()
         
         logger.info("Attempting to find backpack")
         
@@ -143,7 +146,7 @@ class elrsBackpack(VRxController):
                     response_payload = list(s.read(response_payload_length))
                     response_check_sum = list(s.read(1))
 
-                    if mode == 0x0380:
+                    if mode == msptypes.MSP_ELRS_BACKPACK_SET_MODE:
                         logger.info(f"Connected to backpack on {port.device}")
 
                         version_list = [chr(val) for val in response_payload]
@@ -201,7 +204,7 @@ class elrsBackpack(VRxController):
                     check_sum = list(s.read(1))
 
                     # Monitor SET_RECORDING_STATE for controling race
-                    if mode == 0x0305:
+                    if mode == msptypes.MSP_ELRS_BACKPACK_SET_RECORDING_STATE:
                         if payload[0] == 0x00:
                             gevent.spawn(self.stop_race)
                         elif payload[0] == 0x01:
@@ -221,6 +224,16 @@ class elrsBackpack(VRxController):
         if (bindingPhraseHash[0] % 2) == 1:
             bindingPhraseHash[0] -= 0x01
         return bindingPhraseHash
+    
+    def centerOSD(self, stringlength, hardwaretype):
+        offset = int(stringlength/2)
+        if hardwaretype:
+            col = int(HARDWARE_SETTINGS[hardwaretype]['row_size'] / 2) - offset
+            if col < 0:
+                col = 0
+        else:
+            col = 0
+        return col
 
     def queue_add(self, msp):
         with self._connector_status_lock:
@@ -238,86 +251,74 @@ class elrsBackpack(VRxController):
                 self._queue_full = False
                 message = 'ELRS Backpack has start responding again.'
                 self._rhapi.ui.message_notify(self._rhapi.language.__(message))
-
-    def crc8_dvb_s2(self, crc, a):
-        crc = crc ^ a
-        for ii in range(8):
-            if crc & 0x80:
-                crc = (crc << 1) ^ 0xD5
-            else:
-                crc = crc << 1
-        return crc & 0xFF
     
-    def send_msp(self, body):
-        crc = 0
-        for x in body:
-            crc = self.crc8_dvb_s2(crc, x)
-        msp = [ord('$'),ord('X'),ord('<')]
-        msp = msp + body
-        msp.append(crc)
+    def send_msp(self, msp):
         self.queue_add(msp)
-        if self.combine_bytes(msp[4], msp[5]) == 0x00B6:
-            for count in range(self._repeat_count):
+        if self.combine_bytes(msp[4], msp[5]) == msptypes.MSP_ELRS_SET_OSD:
+            for _ in range(self._repeat_count):
                 self.queue_add(msp)
             
     def set_sendUID(self, bindingHash:list):
-        msp = [0,0x00B5,0x00,7,0,1]
-        for byte in bindingHash:
-            msp.append(byte)
-        self.send_msp(msp)
+        message = msp_message()
+        message.set_function(msptypes.MSP_ELRS_SET_SEND_UID)
+        message.set_payload([1] + bindingHash)
+        self.send_msp(message.get_msp())
 
     def clear_sendUID(self):
-        msp = [0,0x00B5,0x00,1,0,0]
-        self.send_msp(msp)
+        message = msp_message()
+        message.set_function(msptypes.MSP_ELRS_SET_SEND_UID)
+        message.set_payload([0])
+        self.send_msp(message.get_msp())
 
     def send_clear(self):
-        msp = [0,0x00B6,0x00,1,0,0x02]
-        self.send_msp(msp)
+        message = msp_message()
+        message.set_function(msptypes.MSP_ELRS_SET_OSD)
+        message.set_payload([0x02])
+        self.send_msp(message.get_msp())
 
     def send_msg(self, row, col, str):
-        l = 4+len(str)
-        msp = [0,0x00B6,0x00,l%256,int(l/256),0x03,row,col,0]
+        payload = [0x03,row,col,0]
         for x in [*str]:
-            msp.append(ord(x))
-        self.send_msp(msp)
+            payload.append(ord(x))
+
+        message = msp_message()
+        message.set_function(msptypes.MSP_ELRS_SET_OSD)
+        message.set_payload(payload)
+        self.send_msp(message.get_msp())
 
     def send_display(self):
-        msp = [0,0x00B6,0x00,1,0,0x04]
-        self.send_msp(msp)
-
-    def centerOSD(self, stringlength, hardwaretype):
-        offset = int(stringlength/2)
-        if hardwaretype:
-            col = int(HARDWARE_SETTINGS[hardwaretype]['row_size'] / 2) - offset
-            if col < 0:
-                col = 0
-        else:
-            col = 0
-        return col
+        message = msp_message()
+        message.set_function(msptypes.MSP_ELRS_SET_OSD)
+        message.set_payload([0x04])
+        self.send_msp(message.get_msp())
     
     def send_clear_row(self, row, hardwaretype):
-        if hardwaretype:
-            l = 4 + HARDWARE_SETTINGS[hardwaretype]['row_size']
-        else:
-            l = 0
-        msp = [0,0x00B6,0x00,l%256,int(l/256),0x03,row,0,0]
+        payload = [0x03,row,0,0]
         for x in range(HARDWARE_SETTINGS[hardwaretype]['row_size']):
-            msp.append(0)
-        self.send_msp(msp)
+            payload.append(0)
+
+        message = msp_message()
+        message.set_function(msptypes.MSP_ELRS_SET_OSD)
+        message.set_payload(payload)
+        self.send_msp(message.get_msp())
 
     def activate_bind(self, _args):
         message = "Activating backpack's bind mode..."
         self._rhapi.ui.message_notify(self._rhapi.language.__(message))
-        msp = [0,128,3,1,0,66]
+        message = msp_message()
+        message.set_function(msptypes.MSP_ELRS_BACKPACK_SET_MODE)
+        message.set_payload([ord('B')])
         with self._queue_lock:
-            self.send_msp(msp)
+            self.send_msp(message.get_msp())
     
     def activate_wifi(self, _args):
         message = "Turning on backpack's wifi..."
         self._rhapi.ui.message_notify(self._rhapi.language.__(message))
-        msp = [0,128,3,1,0,87]
+        message = msp_message()
+        message.set_function(msptypes.MSP_ELRS_BACKPACK_SET_MODE)
+        message.set_payload([ord('W')])
         with self._queue_lock:
-            self.send_msp(msp)
+            self.send_msp(message.get_msp())
 
     #
     # Connection Test

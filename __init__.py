@@ -3,7 +3,7 @@ import logging
 from eventmanager import Evt
 from RHUI import UIField, UIFieldType, UIFieldSelectOption
 
-import plugins.VRxC_ELRS.constants as constants
+from plugins.VRxC_ELRS.hardware import hardwareOptions
 import plugins.VRxC_ELRS.elrsBackpack as elrsBackpack
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ def initialize(rhapi):
     #
     
     type_hardware = []
-    for option in constants.hardwareOptions:
+    for option in hardwareOptions:
         type_hardware.append(UIFieldSelectOption(label=option.name, value=option.value))
 
     hardware = UIField('hardware_type', 'ELRS VRx Hardware', field_type = UIFieldType.SELECT, options = type_hardware)
@@ -110,7 +110,7 @@ def initialize(rhapi):
     _bp_repeat = UIField('_bp_repeat', 'Number of times to repeat messages', field_type = UIFieldType.BASIC_INT, value=0)
     rhapi.fields.register_option(_bp_repeat, 'elrs_settings')
 
-    _bp_delay = UIField('_bp_delay', 'Send delay between messages', desc='tens of nanoseconds', field_type = UIFieldType.BASIC_INT, value=80)
+    _bp_delay = UIField('_bp_delay', 'Send delay between messages', desc='tens of microseconds', field_type = UIFieldType.BASIC_INT, value=80)
     rhapi.fields.register_option(_bp_delay, 'elrs_settings')
 
     #
