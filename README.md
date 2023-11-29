@@ -1,7 +1,12 @@
 # RotorHazard VRx Control for the ExpressLRS Backpack
 
 > [!WARNING]
-> This plugin is still in developmental state. Please do not this plugin for official events unless you accept the risk of unstable features. The two associated risks include unwanted text being left on the pilots' OSD when it should be removed and text not being added to the pilots' OSD when it should be. The timeline for the first offical release of this plugin is currently dependent on the stability of the following items:
+> This plugin is still in developmental state. Please do not install this plugin for events unless you acknowledge the risk of unstable features being present. The two associated risks include:
+>1. Unwanted text being left on the pilots' OSD when it is expected to be removed
+>2. Text not being added to the pilots' OSD when it should be. 
+
+> [!NOTE]
+>The timeline for the first offical release of this plugin is currently dependent on the stability of the following items:
 >- this plugin
 >- a new [timer backpack](https://github.com/ExpressLRS/Backpack/pull/114)
 >- the backpack for the HDZero goggles
@@ -99,7 +104,7 @@ ACTIVATED: Shows the gap time to next pilot
 ACTIVATED: The pilot will be shown results when they finish the race. It is recommeded to turn off `Post Flight Results` in Betaflight so the results won't be overridden when the pilot lands.
 
 > [!NOTE]
-> HDZero OSD Rows 10-14 are used by this feature
+> Rows 10-14 in the HDZero goggle's OSD are used by this feature
 
 #### Race Stage Message : TEXT
 
@@ -143,40 +148,48 @@ Length of time to show announcements to pilots. (e.g. When a race is scheduled)
 
 #### Race Status Row (0-9 or 15-17) : INT
 
-> [!NOTE]
-> Rows 10-14 are used by `Show Post-Race Results` when it is enabled. You can use those rows if the feature is disabled.
-
 Row to show race status messages.
+
+> [!NOTE]
+> Rows 10-14 are used by `Show Post-Race Results` when it is enabled. You can use these rows if the feature is disabled.
 
 #### Current Lap/Position Row (0-9 or 15-17) : INT
 
-> [!NOTE]
-> Rows 10-14 are used by `Show Post-Race Results` when it is enabled. You can use those rows if the feature is disabled.
-
 Row to show current lap and position
+
+> [!NOTE]
+> Rows 10-14 are used by `Show Post-Race Results` when it is enabled. You can use these rows if the feature is disabled.
 
 #### Lap/Gap Results Row (0-9 or 15-17) : INT
 
-> [!NOTE]
-> Rows 10-14 are used by `Show Post-Race Results` when it is enabled. You can use those rows if the feature is disabled.
-
 Row to show lap or gap time
+
+> [!NOTE]
+> Rows 10-14 are used by `Show Post-Race Results` when it is enabled. You can use these rows if the feature is disabled.
 
 #### Announcement Row (0-9 or 15-17) : INT
 
-> [!NOTE]
-> Rows 10-14 are used by `Show Post-Race Results` when it is enabled. You can use those rows if the feature is disabled.
-
 Row to show announcements
+
+> [!NOTE]
+> Rows 10-14 are used by `Show Post-Race Results` when it is enabled. You can use these rows if the feature is disabled.
 
 #### CALIBRATION: Number of times to send message : INT
 
-> It is advised that the Race Director should try to find the values that work best for their group. Inceasing the number may help with dropped packets, but will decrease ideal peformance - this setting should be tuned to be as low as possible.
-
 A setting to help with dropped packets. This setting determines the number of times a message should be repeated every time it is sent.
+
+> [!IMPORTANT]
+> It is advised that the Race Director should try to find the values that work best for their group. Inceasing the number may help with dropped packets, but will decrease ideal peformance 
+
+> [!TIP]
+> this setting should be tuned to be as low as possible.
 
 #### CALIBRATION: Send delay between messages (milliseconds) : INT
 
-> It is advised that the Race Director should try to find the values that work best for their group. Inceasing the number may help with dropped packets, but will decrease ideal peformance - this setting should be tuned to be as low as possible.
-
 A setting to help with dropped packets. This setting determines the speed at which the backpack sends messages.
+
+> [!IMPORTANT]
+> It is advised that the Race Director should try to find the values that work best for their group. Inceasing the number may help with dropped packets, but will decrease ideal peformance 
+
+> [!TIP]
+> this setting should be tuned to be as low as possible.
