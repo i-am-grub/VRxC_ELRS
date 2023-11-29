@@ -37,6 +37,10 @@ To install, follow the instructions on the [latest release](https://github.com/i
     6. Select the `WIFI` Flashing Method
     7. Enter your Binding Phrase. You can **NOT** change this on backpack's configuration page.
     8. Select `Build` (do not use FLASH)
+
+> [!IMPORTANT]
+> If your goggles did not come with backpack firmware, you should follow [these instructions](https://www.expresslrs.org/hardware/backpack/hdzero-goggles/) instead of continuing with listed installation instructions
+
 2. Start the Backpack's Wifi (the the goggle's wifi)
 3. Connect your computer to the backpack's wifi and open the backpack's configuration page.
     - If you haven't used it before, the webpage is similar to the default ExpressLRS configuration page.
@@ -54,11 +58,11 @@ There is a feature to control the race from the Race Director's transmitter by t
     2. Open up the Backpack settings
     3. Set the AUX channel for `DVR Rec`
 
-    > [!NOTE]
-    > Note: This will not not stop the ability to start recording DVR through this switch. It is just a state that the race timer's backpack listens for.
-    
-    > [!CAUTION]
-    > It is not recommended to use the same AUX channel as your ARM switch.
+> [!NOTE]
+> Note: This will not not stop the ability to start recording DVR through this switch. It is just a state that the race timer's backpack listens for.
+
+> [!CAUTION]
+> It is recommended to not use the same AUX channel as your ARM switch. 
 
 2. Bind the Race Timer backpack to the Transmitter
     1. Start the RotorHazard server with the ESP32 connected.
