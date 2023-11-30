@@ -32,8 +32,8 @@ To install, follow the instructions on the [latest release](https://github.com/i
     1. Open the ExpressLRS Configurator
     2. Select the Backpack tab
     3. Select release `1.4.1`
-    4. Select the `Goggles` category
-    5. Select the `HDZero Goggle VRX Backpack`
+    4. Select the `HDZero Goggles` category
+    5. Select the `Built-in ESP32 Backpack`
     6. Select the `WIFI` Flashing Method
     7. Enter your bindphrase. You can **NOT** change this on backpack's configuration page.
     8. Select `Build` (do not use FLASH)
@@ -70,7 +70,7 @@ There is a feature to control the race from the Race Director's transmitter by t
     3. Click the `Start Backpack Bind` button.
     4. Within the ExpressLRS Lua script on the transmitter, click `Bind`
 
-To test to see if the backpack was bound sucessfully, navigate the the `Race` tab within RotorHazard, and use the `DVR Rec` switch to start the race.
+To test to see if the backpack was bound sucessfully, navigate the the `Race` tab within RotorHazard, and use the `DVR Rec` switch to start the race. `Race Control from Transmitter` will need to be enabled under `ELRS Backpack General Settings`
 
 > [!TIP]
 > Anytime the backpack needs to be bound to a new transmitter, it will be easiest to reflash the ESP32 with the firmware in the latest release, and then rebind. Attempting to rebind after the 
@@ -90,7 +90,7 @@ Select the type of hardware that the pilot is using. To turn off OSD messages fo
 
 #### Backpack Bindphrase : TEXT
 
-The pilot's individual bindphrase for their backpack. If a bindphrase is not set, the pilot's callsign will be used to generate a bindphrase instead.
+The pilot's individual bindphrase for their backpack. If a bindphrase is not set, the pilot's callsign will be used as the bindphrase instead.
 
 ### General Settings
 
@@ -98,7 +98,7 @@ The pilot's individual bindphrase for their backpack. If a bindphrase is not set
 
 #### Race Control from Transmitter : CHECKBOX
 
-Toggles the ability for the bound transmitter to start a race. 
+Toggles the ability for the bound transmitter to start a race. Please navigate to [here](https://github.com/i-am-grub/VRxC_ELRS#control-the-race-from-the-race-directors-transmitter) for binding the backpack.
 
 #### Number of times to repeat messages : INT
 
@@ -148,13 +148,13 @@ Shows the race name on start.
 
 #### Show Current Position and Lap : CHECKBOX
 
-TOGGLED ON: Only shows current lap
-TOGGLED OFF: Shows current position and current lap when multiple pilots are in a race
+- TOGGLED ON: Only shows current lap
+- TOGGLED OFF: Shows current position and current lap when multiple pilots are in a race
 
 #### Show Gap Time : CHECKBOX
 
-TOGGLED ON: Shows lap result time
-TOGGLED OFF: Shows the gap time to next pilot
+- TOGGLED ON: Shows lap result time
+- TOGGLED OFF: Shows the gap time to next pilot
 
 #### Show Post-Race Results : CHECKBOX
 
