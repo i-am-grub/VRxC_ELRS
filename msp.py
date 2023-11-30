@@ -43,8 +43,7 @@ class msp_message():
         body += self._payload
         
         checksum = self._calculate_checksum(body)
-        body.append(checksum)
-        msp += body
+        msp += body + [checksum]
         return msp
 
 #

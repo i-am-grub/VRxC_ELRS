@@ -12,6 +12,9 @@ import gevent
 import RHUtils
 from RHRace import RaceStatus
 from VRxControl import VRxController
+from RHGPIO import RealRPiGPIOFlag
+if RealRPiGPIOFlag:
+    import RPi.GPIO as GPIO
 
 from plugins.VRxC_ELRS.hardware import HARDWARE_SETTINGS
 from plugins.VRxC_ELRS.msp import msptypes, msp_message
@@ -26,7 +29,7 @@ class elrsBackpack(VRxController):
     _repeat_count = 0
     _send_delay = 0.05
 
-    _backpack_connected = True
+    _backpack_connected = False
     
     _heat_name = None
     _heat_data = {}
@@ -98,6 +101,14 @@ class elrsBackpack(VRxController):
             status = self._rhapi.race.status
             if status == RaceStatus.STAGING or status == RaceStatus.RACING:
                 self._rhapi.race.stop()
+
+    def reboot_esp(self, _args):
+        if RealRPiGPIOFlag:
+            GPIO.output(11, GPIO.LOW)
+            time.sleep(1)
+            GPIO.output(11, GPIO.HIGH)
+            message = "Cycle Complete"
+            self._rhapi.ui.message_notify(self._rhapi.language.__(message))
 
     #
     # Backpack communications
@@ -203,7 +214,7 @@ class elrsBackpack(VRxController):
                     payload = list(s.read(payload_length))
                     check_sum = list(s.read(1))
 
-                    # Monitor SET_RECORDING_STATE for controling race
+                    # Monitor SET_RECORDING_STATE for controlling race
                     if mode == msptypes.MSP_ELRS_BACKPACK_SET_RECORDING_STATE:
                         if payload[0] == 0x00:
                             gevent.spawn(self.stop_race)
