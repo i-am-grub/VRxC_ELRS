@@ -12,7 +12,7 @@ import plugins.VRxC_ELRS.elrsBackpack as elrsBackpack
 
 logger = logging.getLogger(__name__)
 
-PLUGIN_VERSION = 'v1.0.0-beta.3-dev'
+PLUGIN_VERSION = 'v1.0.0-beta.3'
 
 def initialize(rhapi):
 

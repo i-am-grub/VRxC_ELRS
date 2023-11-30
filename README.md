@@ -19,10 +19,12 @@ This is a plugin being developed for the RotorHazard timing system with the foll
 ## Requirements
 
 - RotorHazard v4.0.0+ is required to run the plugin
+- A connected device that can run the ExpressLRS Backpack
+    - Connections over USB or UART will both work
 
 ## Installation
 
-### Installing RH Plugin and Backpack on ESP32
+### Installing RH Plugin and Backpack
 
 To install, follow the instructions on the [latest release](https://github.com/i-am-grub/VRxC_ELRS/releases) of the plugin.
 
@@ -66,7 +68,7 @@ There is a feature to control the race from the Race Director's transmitter by t
 
 2. Bind the Race Timer backpack to the Transmitter
     1. Start the RotorHazard server with the ESP32 connected.
-    2. Navigate to the `ExpressLRS VRxC` settings panel.
+    2. Navigate to the `ELRS Backpack General Settings` panel.
     3. Click the `Start Backpack Bind` button.
     4. Within the ExpressLRS Lua script on the transmitter, click `Bind`
 
