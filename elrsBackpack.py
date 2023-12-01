@@ -152,7 +152,7 @@ class elrsBackpack(VRxController):
 
             response = list(s.read(8))
             if len(response) == 8:
-                logger.debug(response)
+                logger.info(f'Device response: {response}')
                 if response[:3] == [ord('$'),ord('X'),ord('>')]:
                     mode = self.combine_bytes(response[4], response[5])
                     response_payload_length = self.combine_bytes(response[6], response[7])
