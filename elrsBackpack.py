@@ -140,6 +140,7 @@ class elrsBackpack(VRxController):
             try:
                 s.open()
             except:
+                logger.warning('Failed to open serial device. Attempting to connect to new device...')
                 continue
 
             try:
@@ -151,6 +152,7 @@ class elrsBackpack(VRxController):
 
             response = list(s.read(8))
             if len(response) == 8:
+                logger.debug(response)
                 if response[:3] == [ord('$'),ord('X'),ord('>')]:
                     mode = self.combine_bytes(response[4], response[5])
                     response_payload_length = self.combine_bytes(response[6], response[7])
@@ -166,7 +168,17 @@ class elrsBackpack(VRxController):
                         with self._connector_status_lock:
                             self._backpack_connected = True
                         break
+                    
+                    else:
+                        logger.warning(f"Unexpected response from {port.device}, trying next port...")
+                        s.close()
+                        continue
+                else:
+                    logger.warning(f"Unrecongnized response from {port.device}, trying next port...")
+                    s.close()
+                    continue
             else:
+                logger.warning(f"Bad response from {port.device}, trying next port...")
                 s.close()
                 continue
         else:

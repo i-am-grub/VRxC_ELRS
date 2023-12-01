@@ -12,14 +12,17 @@ import plugins.VRxC_ELRS.elrsBackpack as elrsBackpack
 
 logger = logging.getLogger(__name__)
 
-PLUGIN_VERSION = 'v1.0.0-beta.3'
+PLUGIN_VERSION = 'v1.0.0-dev.4'
 
 def initialize(rhapi):
 
     logger.info(PLUGIN_VERSION)
 
     if RealRPiGPIOFlag:
+        logger.info("Turning on GPIO pins for NuclearHazard boards")
         GPIO.setmode(GPIO.BCM)
+        GPIO.setup(16, GPIO.OUT, initial=GPIO.HIGH)
+        time.sleep(0.05)
         GPIO.setup(11, GPIO.OUT, initial=GPIO.HIGH)
         time.sleep(0.05)
 
