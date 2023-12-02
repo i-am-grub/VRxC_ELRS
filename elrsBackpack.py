@@ -159,7 +159,7 @@ class elrsBackpack(VRxController):
                     response_payload = list(s.read(response_payload_length))
                     response_check_sum = list(s.read(1))
 
-                    if mode == msptypes.MSP_ELRS_BACKPACK_SET_MODE:
+                    if mode == msptypes.MSP_ELRS_BACKPACK_SET_MODE or mode == msptypes.MSP_ELRS_GET_BACKPACK_VERSION:
                         logger.info(f"Connected to backpack on {port.device}")
 
                         version_list = [chr(val) for val in response_payload]
