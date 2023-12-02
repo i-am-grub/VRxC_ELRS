@@ -91,13 +91,13 @@ class elrsBackpack(VRxController):
         self._queue_lock.release()
 
     def start_race(self):
-        if self._rhapi.db.option('_race_control'):
+        if self._rhapi.db.option('_race_control') == '1':
             start_race_args = {'start_time_s' : 10}
             if self._rhapi.race.status == RaceStatus.READY:
                 self._rhapi.race.stage(start_race_args)
 
     def stop_race(self):
-        if self._rhapi.db.option('_race_control'):
+        if self._rhapi.db.option('_race_control') == '1':
             status = self._rhapi.race.status
             if status == RaceStatus.STAGING or status == RaceStatus.RACING:
                 self._rhapi.race.stop()
@@ -127,8 +127,7 @@ class elrsBackpack(VRxController):
         ports = list(serial.tools.list_ports.comports())
         s = serial.Serial(baudrate=460800,
                         bytesize=8, parity='N', stopbits=1,
-                        timeout=0.01, xonxoff=0, rtscts=0,
-                        write_timeout=0.01)
+                        timeout=0.01, xonxoff=0, rtscts=0)
         
         #
         # Search for connected backpack
@@ -142,6 +141,8 @@ class elrsBackpack(VRxController):
             except:
                 logger.warning('Failed to open serial device. Attempting to connect to new device...')
                 continue
+            
+            time.sleep(1.5) # Needed for connecting to DevKitC
 
             try:
                 s.write(version_message)
