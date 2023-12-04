@@ -448,7 +448,11 @@ class elrsBackpack(VRxController):
                 self.onHeatSet(args)
 
         heat_data = self._rhapi.db.heat_by_id(args['heat_id'])
-        class_name = self._rhapi.db.raceclass_by_id(heat_data.class_id).name
+        raceclass = self._rhapi.db.raceclass_by_id(heat_data.class_id)
+        if raceclass:
+            class_name = raceclass.name
+        else:
+            class_name = None
         heat_name = heat_data.name
         if heat_data and self._heat_name and class_name and heat_name:
             round_trans = self._rhapi.__('Round')
