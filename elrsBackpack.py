@@ -24,10 +24,7 @@ logger = logging.getLogger(__name__)
 class elrsBackpack(VRxController):
     
     _queue_lock = Lock()
-    _delay_lock = Lock()
     _connector_status_lock = Lock()
-    _repeat_count = 0
-    _send_delay = 0.05
 
     _backpack_connected = False
     
@@ -84,10 +81,6 @@ class elrsBackpack(VRxController):
         self._lapresults_row = self._rhapi.db.option('_lapresults_row')
         self._announcement_row = self._rhapi.db.option('_announcement_row')
 
-        self._repeat_count = self._rhapi.db.option('_bp_repeat')
-        with self._delay_lock:
-            self._send_delay = self._rhapi.db.option('_bp_delay') * 1e-5
-
         self._queue_lock.release()
 
     def start_race(self):
@@ -127,7 +120,8 @@ class elrsBackpack(VRxController):
         ports = list(serial.tools.list_ports.comports())
         s = serial.Serial(baudrate=460800,
                         bytesize=8, parity='N', stopbits=1,
-                        timeout=0.01, xonxoff=0, rtscts=0)
+                        timeout=0.01, xonxoff=0, rtscts=0,
+                        write_timeout=0.01)
         
         #
         # Search for connected backpack
@@ -197,14 +191,10 @@ class elrsBackpack(VRxController):
         error_count = 0
         while backpack_connected:
 
-            self._delay_lock.acquire()
-            delay = copy.copy(self._send_delay)
-            self._delay_lock.release()
-
             # Handle backpack comms 
             while not self._backpack_queue.empty():
                 message = self._backpack_queue.get()
-                time.sleep(delay)
+                s.flush()
                 
                 try:
                     s.write(message)
@@ -278,9 +268,6 @@ class elrsBackpack(VRxController):
     
     def send_msp(self, msp):
         self.queue_add(msp)
-        if self.combine_bytes(msp[4], msp[5]) == msptypes.MSP_ELRS_SET_OSD:
-            for _ in range(self._repeat_count):
-                self.queue_add(msp)
             
     def set_sendUID(self, bindingHash:list):
         message = msp_message()
@@ -448,19 +435,29 @@ class elrsBackpack(VRxController):
                 self.onHeatSet(args)
 
         heat_data = self._rhapi.db.heat_by_id(args['heat_id'])
-        raceclass = self._rhapi.db.raceclass_by_id(heat_data.class_id)
+        if heat_data:
+            class_id = heat_data.class_id
+            heat_name = heat_data.name
+        else:
+            class_id = None
+            heat_name = None
+        if class_id:
+            raceclass = self._rhapi.db.raceclass_by_id(class_id)
+        else:
+            raceclass = None
         if raceclass:
             class_name = raceclass.name
         else:
             class_name = None
-        heat_name = heat_data.name
-        if heat_data and self._heat_name and class_name and heat_name:
+        if self._heat_name and heat_data and class_name and heat_name:
             round_trans = self._rhapi.__('Round')
             round_num = self._rhapi.db.heat_max_round(args['heat_id']) + 1
             if round_num > 1:
                 race_name = f'x {class_name.upper()} | {heat_name.upper()} | {round_trans.upper()} {round_num} w'
             else:
                 race_name = f'x {class_name.upper()} | {heat_name.upper()} w'
+        elif self._heat_name and heat_data and heat_name:
+            race_name = f'x {heat_name.upper()} w'
 
         # Send stage message to all pilots
         def arm(pilot_id):
@@ -469,7 +466,7 @@ class elrsBackpack(VRxController):
             self.send_clear()
             start_col1 = self.centerOSD(len(self._racestage_message), self._heat_data[pilot_id]['hardware_type'])
             self.send_msg(self._status_row, start_col1, self._racestage_message)
-            if self._heat_name and class_name and heat_name:
+            if self._heat_name and heat_name:
                 start_col2 = self.centerOSD(len(race_name), self._heat_data[pilot_id]['hardware_type'])
                 self.send_msg(self._announcement_row, start_col2, race_name)
             self.send_display()

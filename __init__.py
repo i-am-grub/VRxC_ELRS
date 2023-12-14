@@ -119,12 +119,6 @@ def initialize(rhapi):
     _announcement_row = UIField('_announcement_row', 'Announcement Row', desc='Use rows between 0-9 or 15-17', field_type = UIFieldType.BASIC_INT, value=6)
     rhapi.fields.register_option(_announcement_row, 'elrs_vrxc')
 
-    _bp_repeat = UIField('_bp_repeat', 'Number of times to repeat messages', field_type = UIFieldType.BASIC_INT, value=0)
-    rhapi.fields.register_option(_bp_repeat, 'elrs_settings')
-
-    _bp_delay = UIField('_bp_delay', 'Send delay between messages', desc='tens of microseconds', field_type = UIFieldType.BASIC_INT, value=80)
-    rhapi.fields.register_option(_bp_delay, 'elrs_settings')
-
     #
     # Quick Buttons
     #
