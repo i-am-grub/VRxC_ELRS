@@ -1,4 +1,5 @@
 import logging
+import enum
 
 from eventmanager import Evt
 from RHUI import UIField, UIFieldType, UIFieldSelectOption
@@ -7,12 +8,16 @@ if RealRPiGPIOFlag:
     import RPi.GPIO as GPIO
     import time
 
-from plugins.VRxC_ELRS.hardware import hardwareOptions
 import plugins.VRxC_ELRS.elrsBackpack as elrsBackpack
 
 logger = logging.getLogger(__name__)
 
 PLUGIN_VERSION = 'v1.0.0-dev.4'
+
+class hardwareOptions(Enum):
+    NONE = 'none'
+    HDZERO = 'hdzero'
+    MSP_OSD = 'msp_osd'
 
 def initialize(rhapi):
 
@@ -124,7 +129,6 @@ def initialize(rhapi):
     #
 
     rhapi.ui.register_quickbutton('elrs_settings', 'enable_bind', "Start Backpack Bind", controller.activate_bind)
-    rhapi.ui.register_quickbutton('elrs_settings', 'test_osd', "Test Bound Backpack's OSD", controller.test_osd)
     rhapi.ui.register_quickbutton('elrs_settings', 'enable_wifi', "Start Backpack WiFi", controller.activate_wifi)
     if RealRPiGPIOFlag:
         rhapi.ui.register_quickbutton('elrs_settings', 'reboot_esp', "Reboot NuclearHazard ESP32", controller.reboot_esp)
