@@ -603,6 +603,7 @@ class elrsBackpack(VRxController):
 
         self._queue_lock.acquire()
         if self._heat_data == {}:
+            self._queue_lock.release()
             return
 
         if args['pilot_done_flag']:
