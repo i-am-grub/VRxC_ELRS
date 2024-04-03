@@ -12,9 +12,7 @@ import gevent
 import RHUtils
 from RHRace import RaceStatus
 from VRxControl import VRxController
-from RHGPIO import RealRPiGPIOFlag
-if RealRPiGPIOFlag:
-    import RPi.GPIO as GPIO
+import util.RH_GPIO as RH_GPIO
 
 from plugins.VRxC_ELRS.hardware import HARDWARE_SETTINGS
 from plugins.VRxC_ELRS.msp import msptypes, msp_message
@@ -96,10 +94,10 @@ class elrsBackpack(VRxController):
                 self._rhapi.race.stop()
 
     def reboot_esp(self, _args):
-        if RealRPiGPIOFlag:
-            GPIO.output(11, GPIO.LOW)
+        if RH_GPIO.is_real_hw_GPIO():
+            RH_GPIO.output(11, RH_GPIO.LOW)
             time.sleep(1)
-            GPIO.output(11, GPIO.HIGH)
+            RH_GPIO.output(11, RH_GPIO.HIGH)
             message = "Cycle Complete"
             self._rhapi.ui.message_notify(self._rhapi.language.__(message))
 

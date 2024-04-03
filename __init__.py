@@ -2,9 +2,8 @@ import logging
 
 from eventmanager import Evt
 from RHUI import UIField, UIFieldType, UIFieldSelectOption
-from RHGPIO import RealRPiGPIOFlag
-if RealRPiGPIOFlag:
-    import RPi.GPIO as GPIO
+import util.RH_GPIO as RH_GPIO
+if RH_GPIO.is_real_hw_GPIO():
     import time
 
 from plugins.VRxC_ELRS.hardware import hardwareOptions
@@ -12,18 +11,14 @@ import plugins.VRxC_ELRS.elrsBackpack as elrsBackpack
 
 logger = logging.getLogger(__name__)
 
-PLUGIN_VERSION = 'v1.0.0-dev.4'
-
 def initialize(rhapi):
 
-    logger.info(PLUGIN_VERSION)
-
-    if RealRPiGPIOFlag:
+    if RH_GPIO.is_real_hw_GPIO():
         logger.info("Turning on GPIO pins for NuclearHazard boards")
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(16, GPIO.OUT, initial=GPIO.HIGH)
+        RH_GPIO.setmode(RH_GPIO.BCM)
+        RH_GPIO.setup(16, RH_GPIO.OUT, initial=RH_GPIO.HIGH)
         time.sleep(0.05)
-        GPIO.setup(11, GPIO.OUT, initial=GPIO.HIGH)
+        RH_GPIO.setup(11, RH_GPIO.OUT, initial=RH_GPIO.HIGH)
         time.sleep(0.05)
 
     controller = elrsBackpack.elrsBackpack('elrs', 'ELRS', rhapi)
@@ -126,5 +121,5 @@ def initialize(rhapi):
     rhapi.ui.register_quickbutton('elrs_settings', 'enable_bind', "Start Backpack Bind", controller.activate_bind)
     rhapi.ui.register_quickbutton('elrs_settings', 'test_osd', "Test Bound Backpack's OSD", controller.test_osd)
     rhapi.ui.register_quickbutton('elrs_settings', 'enable_wifi', "Start Backpack WiFi", controller.activate_wifi)
-    if RealRPiGPIOFlag:
+    if RH_GPIO.is_real_hw_GPIO():
         rhapi.ui.register_quickbutton('elrs_settings', 'reboot_esp', "Reboot NuclearHazard ESP32", controller.reboot_esp)
