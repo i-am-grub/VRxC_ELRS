@@ -61,7 +61,7 @@ def initialize(rhapi):
     _gap_mode = UIField('_gap_mode', 'Show Gap Time', desc='off - shows lap time', field_type = UIFieldType.CHECKBOX)
     rhapi.fields.register_option(_gap_mode, 'elrs_vrxc')
 
-    _results_mode = UIField('_results_mode', 'Show Post-Race Results', field_type = UIFieldType.CHECKBOX)
+    _results_mode = UIField('_results_mode', 'Show Post-Race Results', desc="Uses rows 10-14", field_type = UIFieldType.CHECKBOX)
     rhapi.fields.register_option(_results_mode, 'elrs_vrxc')
 
     #

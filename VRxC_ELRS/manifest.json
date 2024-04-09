@@ -6,7 +6,7 @@
     "info_uri" : "https://github.com/i-am-grub/VRxC_ELRS",
     "license" : "MIT",
     "license_uri" : "https://github.com/i-am-grub/VRxC_ELRS/blob/master/LICENSE",
-    "version" : "1.0.0-dev.5",
+    "version" : "1.0.0",
     "required_rhapi_version" : "1.1",
     "update_uri" : null,
     "text_domain" : null

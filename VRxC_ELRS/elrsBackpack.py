@@ -43,43 +43,41 @@ class elrsBackpack(VRxController):
 
     def setOptions(self, _args = None):
 
-        self._queue_lock.acquire()
+        with self._queue_lock:
 
-        if self._rhapi.db.option('_heat_name') == "1":
-            self._heat_name = True
-        else:
-            self._heat_name = False
-        if self._rhapi.db.option('_position_mode') == "1":
-            self._position_mode = True
-        else:
-            self._position_mode = False
-        if self._rhapi.db.option('_gap_mode') == "1":
-            self._gap_mode = True
-        else:
-            self._gap_mode = False
-        if self._rhapi.db.option('_results_mode') == "1":
-            self._results_mode = True
-        else:
-            self._results_mode = False
+            if self._rhapi.db.option('_heat_name') == "1":
+                self._heat_name = True
+            else:
+                self._heat_name = False
+            if self._rhapi.db.option('_position_mode') == "1":
+                self._position_mode = True
+            else:
+                self._position_mode = False
+            if self._rhapi.db.option('_gap_mode') == "1":
+                self._gap_mode = True
+            else:
+                self._gap_mode = False
+            if self._rhapi.db.option('_results_mode') == "1":
+                self._results_mode = True
+            else:
+                self._results_mode = False
 
-        self._racestage_message = self._rhapi.db.option('_racestage_message')
-        self._racestart_message = self._rhapi.db.option('_racestart_message')
-        self._pilotdone_message = self._rhapi.db.option('_pilotdone_message')
-        self._racefinish_message = self._rhapi.db.option('_racefinish_message')
-        self._racestop_message = self._rhapi.db.option('_racestop_message')
-        self._leader_message = self._rhapi.db.option('_leader_message')
+            self._racestage_message = self._rhapi.db.option('_racestage_message')
+            self._racestart_message = self._rhapi.db.option('_racestart_message')
+            self._pilotdone_message = self._rhapi.db.option('_pilotdone_message')
+            self._racefinish_message = self._rhapi.db.option('_racefinish_message')
+            self._racestop_message = self._rhapi.db.option('_racestop_message')
+            self._leader_message = self._rhapi.db.option('_leader_message')
 
-        self._racestart_uptime = self._rhapi.db.option('_racestart_uptime') * 1e-1
-        self._finish_uptime = self._rhapi.db.option('_finish_uptime') * 1e-1
-        self._results_uptime = self._rhapi.db.option('_results_uptime') * 1e-1
-        self._announcement_uptime = self._rhapi.db.option('_announcement_uptime') * 1e-1
+            self._racestart_uptime = self._rhapi.db.option('_racestart_uptime') * 1e-1
+            self._finish_uptime = self._rhapi.db.option('_finish_uptime') * 1e-1
+            self._results_uptime = self._rhapi.db.option('_results_uptime') * 1e-1
+            self._announcement_uptime = self._rhapi.db.option('_announcement_uptime') * 1e-1
 
-        self._status_row = self._rhapi.db.option('_status_row')
-        self._currentlap_row = self._rhapi.db.option('_currentlap_row')
-        self._lapresults_row = self._rhapi.db.option('_lapresults_row')
-        self._announcement_row = self._rhapi.db.option('_announcement_row')
-
-        self._queue_lock.release()
+            self._status_row = self._rhapi.db.option('_status_row')
+            self._currentlap_row = self._rhapi.db.option('_currentlap_row')
+            self._lapresults_row = self._rhapi.db.option('_lapresults_row')
+            self._announcement_row = self._rhapi.db.option('_announcement_row')
 
     def start_race(self):
         if self._rhapi.db.option('_race_control') == '1':
@@ -339,25 +337,22 @@ class elrsBackpack(VRxController):
             message = 'ROTORHAZARD'
             for row in range(HARDWARE_SETTINGS['hdzero']['column_size']):
 
-                self._queue_lock.acquire()
-                self.send_clear()
-                start_col = self.centerOSD(len(message), 'hdzero')
-                self.send_msg(row, start_col, message)    
-                self.send_display()
-                self._queue_lock.release()
+                with self._queue_lock:
+                    self.send_clear()
+                    start_col = self.centerOSD(len(message), 'hdzero')
+                    self.send_msg(row, start_col, message)    
+                    self.send_display()
 
                 time.sleep(0.5)
 
-                self._queue_lock.acquire()
-                self.send_clear_row(row, 'hdzero')
-                self.send_display()
-                self._queue_lock.release()
+                with self._queue_lock:
+                    self.send_clear_row(row, 'hdzero')
+                    self.send_display()
 
             time.sleep(1)
-            self._queue_lock.acquire()
-            self.send_clear()
-            self.send_display()
-            self._queue_lock.release()
+            with self._queue_lock:
+                self.send_clear()
+                self.send_display()
 
         Thread(target=test, daemon=True).start()
 
@@ -367,32 +362,29 @@ class elrsBackpack(VRxController):
 
     def onPilotAlter(self, args):
         pilot_id = args['pilot_id']
-        self._queue_lock.acquire()
+        with self._queue_lock:
 
-        if pilot_id in self._heat_data:
-            pilot_settings = {}
+            if pilot_id in self._heat_data:
+                pilot_settings = {}
 
-            hardware_type = self._rhapi.db.pilot_attribute_value(pilot_id, 'hardware_type')
-            logger.info(f"Pilot {pilot_id}'s hardware set to {hardware_type}")
-            if hardware_type in HARDWARE_SETTINGS:
-                pilot_settings['hardware_type'] = hardware_type
-            else:
-                self._heat_data[pilot_id] = None
-                self._queue_lock.release()
-                return
+                hardware_type = self._rhapi.db.pilot_attribute_value(pilot_id, 'hardware_type')
+                logger.info(f"Pilot {pilot_id}'s hardware set to {hardware_type}")
+                if hardware_type in HARDWARE_SETTINGS:
+                    pilot_settings['hardware_type'] = hardware_type
+                else:
+                    self._heat_data[pilot_id] = None
+                    return
 
-            bindphrase = self._rhapi.db.pilot_attribute_value(pilot_id, 'comm_elrs')
-            if bindphrase:
-                UID = self.hash_phrase(bindphrase)
-                pilot_settings['UID'] = UID
-            else:
-                UID = self.hash_phrase(self._rhapi.db.pilot_by_id(pilot_id).callsign)
-                pilot_settings['UID'] = UID
+                bindphrase = self._rhapi.db.pilot_attribute_value(pilot_id, 'comm_elrs')
+                if bindphrase:
+                    UID = self.hash_phrase(bindphrase)
+                    pilot_settings['UID'] = UID
+                else:
+                    UID = self.hash_phrase(self._rhapi.db.pilot_by_id(pilot_id).callsign)
+                    pilot_settings['UID'] = UID
 
-            self._heat_data[pilot_id] = pilot_settings
-            logger.info(f"Pilot {pilot_id}'s UID set to {UID}")
-
-        self._queue_lock.release()
+                self._heat_data[pilot_id] = pilot_settings
+                logger.info(f"Pilot {pilot_id}'s UID set to {UID}")
 
     def onHeatSet(self, args):
 
@@ -459,17 +451,16 @@ class elrsBackpack(VRxController):
 
         # Send stage message to all pilots
         def arm(pilot_id):
-            self._queue_lock.acquire()
-            self.set_sendUID(self._heat_data[pilot_id]['UID'])
-            self.send_clear()
-            start_col1 = self.centerOSD(len(self._racestage_message), self._heat_data[pilot_id]['hardware_type'])
-            self.send_msg(self._status_row, start_col1, self._racestage_message)
-            if self._heat_name and heat_name:
-                start_col2 = self.centerOSD(len(race_name), self._heat_data[pilot_id]['hardware_type'])
-                self.send_msg(self._announcement_row, start_col2, race_name)
-            self.send_display()
-            self.clear_sendUID()
-            self._queue_lock.release()
+            with self._queue_lock:
+                self.set_sendUID(self._heat_data[pilot_id]['UID'])
+                self.send_clear()
+                start_col1 = self.centerOSD(len(self._racestage_message), self._heat_data[pilot_id]['hardware_type'])
+                self.send_msg(self._status_row, start_col1, self._racestage_message)
+                if self._heat_name and heat_name:
+                    start_col2 = self.centerOSD(len(race_name), self._heat_data[pilot_id]['hardware_type'])
+                    self.send_msg(self._announcement_row, start_col2, race_name)
+                self.send_display()
+                self.clear_sendUID()
 
         with self._queue_lock:
             for pilot_id in self._heat_data:
@@ -479,24 +470,22 @@ class elrsBackpack(VRxController):
     def onRaceStart(self, _args):
         
         def start(pilot_id):
-            self._queue_lock.acquire()
-            self.set_sendUID(self._heat_data[pilot_id]['UID'])
-            self.send_clear()
-            start_col = self.centerOSD(len(self._racestart_message), self._heat_data[pilot_id]['hardware_type'])
-            self.send_msg(self._status_row, start_col, self._racestart_message)  
-            self.send_display()
-            self.clear_sendUID()
-            delay = copy.copy(self._racestart_uptime)
-            self._queue_lock.release()
+            with self._queue_lock:
+                self.set_sendUID(self._heat_data[pilot_id]['UID'])
+                self.send_clear()
+                start_col = self.centerOSD(len(self._racestart_message), self._heat_data[pilot_id]['hardware_type'])
+                self.send_msg(self._status_row, start_col, self._racestart_message)  
+                self.send_display()
+                self.clear_sendUID()
+                delay = copy.copy(self._racestart_uptime)
 
             time.sleep(delay)
 
-            self._queue_lock.acquire()
-            self.set_sendUID(self._heat_data[pilot_id]['UID'])
-            self.send_clear_row(self._status_row, self._heat_data[pilot_id]['hardware_type'])
-            self.send_display()
-            self.clear_sendUID()
-            self._queue_lock.release()
+            with self._queue_lock:
+                self.set_sendUID(self._heat_data[pilot_id]['UID'])
+                self.send_clear_row(self._status_row, self._heat_data[pilot_id]['hardware_type'])
+                self.send_display()
+                self.clear_sendUID()
 
         with self._queue_lock:
             for pilot_id in self._heat_data:
@@ -507,24 +496,22 @@ class elrsBackpack(VRxController):
     def onRaceFinish(self, _args):
         
         def start(pilot_id):
-            self._queue_lock.acquire()
-            self.set_sendUID(self._heat_data[pilot_id]['UID'])
-            self.send_clear_row(self._status_row, self._heat_data[pilot_id]['hardware_type'])
-            start_col = self.centerOSD(len(self._racefinish_message), self._heat_data[pilot_id]['hardware_type'])
-            self.send_msg(self._status_row, start_col, self._racefinish_message)  
-            self.send_display()
-            self.clear_sendUID()
-            delay = copy.copy(self._finish_uptime)
-            self._queue_lock.release()
+            with self._queue_lock:
+                self.set_sendUID(self._heat_data[pilot_id]['UID'])
+                self.send_clear_row(self._status_row, self._heat_data[pilot_id]['hardware_type'])
+                start_col = self.centerOSD(len(self._racefinish_message), self._heat_data[pilot_id]['hardware_type'])
+                self.send_msg(self._status_row, start_col, self._racefinish_message)  
+                self.send_display()
+                self.clear_sendUID()
+                delay = copy.copy(self._finish_uptime)
 
             time.sleep(delay)
 
-            self._queue_lock.acquire()
-            self.set_sendUID(self._heat_data[pilot_id]['UID'])
-            self.send_clear_row(self._status_row, self._heat_data[pilot_id]['hardware_type'])
-            self.send_display()
-            self.clear_sendUID()
-            self._queue_lock.release()
+            with self._queue_lock:
+                self.set_sendUID(self._heat_data[pilot_id]['UID'])
+                self.send_clear_row(self._status_row, self._heat_data[pilot_id]['hardware_type'])
+                self.send_display()
+                self.clear_sendUID()
 
         with self._queue_lock:
             for pilot_id in self._heat_data:
@@ -534,13 +521,12 @@ class elrsBackpack(VRxController):
     def onRaceStop(self, _args):
 
         def land(pilot_id):
-            self._queue_lock.acquire()
-            self.set_sendUID(self._heat_data[pilot_id]['UID'])
-            start_col = self.centerOSD(len(self._racestop_message), self._heat_data[pilot_id]['hardware_type'])
-            self.send_msg(self._status_row, start_col, self._racestop_message) 
-            self.send_display()
-            self.clear_sendUID()
-            self._queue_lock.release()
+            with self._queue_lock:
+                self.set_sendUID(self._heat_data[pilot_id]['UID'])
+                start_col = self.centerOSD(len(self._racestop_message), self._heat_data[pilot_id]['hardware_type'])
+                self.send_msg(self._status_row, start_col, self._racestop_message) 
+                self.send_display()
+                self.clear_sendUID()
 
         with self._queue_lock:
             for pilot_id in self._heat_data:
@@ -552,128 +538,117 @@ class elrsBackpack(VRxController):
         def update_pos(result):
             pilot_id = result['pilot_id']
 
-            self._queue_lock.acquire()
-            if not self._position_mode or len(self._heat_data) == 1:
-                message = f"LAP: {result['laps'] + 1}"
-            else:
-                message = f"POSN: {str(result['position']).upper()} | LAP: {result['laps'] + 1}"
-            start_col = self.centerOSD(len(message), self._heat_data[pilot_id]['hardware_type'])
+            with self._queue_lock:
+                if not self._position_mode or len(self._heat_data) == 1:
+                    message = f"LAP: {result['laps'] + 1}"
+                else:
+                    message = f"POSN: {str(result['position']).upper()} | LAP: {result['laps'] + 1}"
+                start_col = self.centerOSD(len(message), self._heat_data[pilot_id]['hardware_type'])
 
-            self.set_sendUID(self._heat_data[pilot_id]['UID'])
-            self.send_clear_row(self._currentlap_row, self._heat_data[pilot_id]['hardware_type'])
-            
-            self.send_msg(self._currentlap_row, start_col, message) 
-            self.send_display()
-            self.clear_sendUID()
-            self._queue_lock.release()
+                self.set_sendUID(self._heat_data[pilot_id]['UID'])
+                self.send_clear_row(self._currentlap_row, self._heat_data[pilot_id]['hardware_type'])
+                
+                self.send_msg(self._currentlap_row, start_col, message) 
+                self.send_display()
+                self.clear_sendUID()
 
         def lap_results(result, gap_info):
             pilot_id = result['pilot_id']
 
-            self._queue_lock.acquire()
-            if not self._gap_mode or len(self._heat_data) == 1:
-                formatted_time = RHUtils.time_format(gap_info.current.last_lap_time, '{m}:{s}.{d}')
-                message = f"x LAP {gap_info.current.lap_number} | {formatted_time} w"
-            elif gap_info.next_rank.position:
-                formatted_time = RHUtils.time_format(gap_info.next_rank.diff_time, '{m}:{s}.{d}')
-                formatted_callsign = str.upper(gap_info.next_rank.callsign)
-                message = f"x {formatted_callsign} | +{formatted_time} w"
-            else:
-                message = self._leader_message
-            start_col = self.centerOSD(len(message), self._heat_data[pilot_id]['hardware_type'])
-        
-            self.set_sendUID(self._heat_data[pilot_id]['UID'])
-            self.send_msg(self._lapresults_row, start_col, message)
-            self.send_display()
-            self.clear_sendUID()
-            delay = copy.copy(self._results_uptime)
-            self._queue_lock.release()
+            with self._queue_lock:
+                if not self._gap_mode or len(self._heat_data) == 1:
+                    formatted_time = RHUtils.time_format(gap_info.current.last_lap_time, '{m}:{s}.{d}')
+                    message = f"x LAP {gap_info.current.lap_number} | {formatted_time} w"
+                elif gap_info.next_rank.position:
+                    formatted_time = RHUtils.time_format(gap_info.next_rank.diff_time, '{m}:{s}.{d}')
+                    formatted_callsign = str.upper(gap_info.next_rank.callsign)
+                    message = f"x {formatted_callsign} | +{formatted_time} w"
+                else:
+                    message = self._leader_message
+                start_col = self.centerOSD(len(message), self._heat_data[pilot_id]['hardware_type'])
+            
+                self.set_sendUID(self._heat_data[pilot_id]['UID'])
+                self.send_msg(self._lapresults_row, start_col, message)
+                self.send_display()
+                self.clear_sendUID()
+                delay = copy.copy(self._results_uptime)
 
             time.sleep(delay)
 
-            self._queue_lock.acquire()
-            self.set_sendUID(self._heat_data[pilot_id]['UID'])
-            self.send_clear_row(self._lapresults_row, self._heat_data[pilot_id]['hardware_type'])
-            self.send_display()
-            self.clear_sendUID()
-            self._queue_lock.release()
+            with self._queue_lock:
+                self.set_sendUID(self._heat_data[pilot_id]['UID'])
+                self.send_clear_row(self._lapresults_row, self._heat_data[pilot_id]['hardware_type'])
+                self.send_display()
+                self.clear_sendUID()
 
+        with self._queue_lock:
+            if self._heat_data == {}:
+                return
 
-        self._queue_lock.acquire()
-        if self._heat_data == {}:
-            self._queue_lock.release()
-            return
+            if args['pilot_done_flag']:
+                self._finished_pilots.append(args['pilot_id'])
 
-        if args['pilot_done_flag']:
-            self._finished_pilots.append(args['pilot_id'])
+            results = args['results']['by_race_time']
+            for result in results:
+                if self._heat_data[result['pilot_id']]:
+                    
+                    if result['pilot_id'] not in self._finished_pilots:
+                        Thread(target=update_pos, args=(result,), daemon=True).start()
 
-        results = args['results']['by_race_time']
-        for result in results:
-            if self._heat_data[result['pilot_id']]:
-                
-                if result['pilot_id'] not in self._finished_pilots:
-                    Thread(target=update_pos, args=(result,), daemon=True).start()
-
-                if (result['pilot_id'] == args['pilot_id']) and (result['laps'] > 0):
-                    Thread(target=lap_results, args=(result, args['gap_info']), daemon=True).start()
-        
-        self._queue_lock.release()
+                    if (result['pilot_id'] == args['pilot_id']) and (result['laps'] > 0):
+                        Thread(target=lap_results, args=(result, args['gap_info']), daemon=True).start()
     
     def onLapDelete(self, _args):
         
         def delete(pilot_id):
-            self._queue_lock.acquire()
-            if self._heat_data[pilot_id]:
-                self.set_sendUID(self._heat_data[pilot_id]['UID'])
-                self.send_clear()
-                self.send_display()
-                self.clear_sendUID()
-            self._queue_lock.release()
+            with self._queue_lock:
+                if self._heat_data[pilot_id]:
+                    self.set_sendUID(self._heat_data[pilot_id]['UID'])
+                    self.send_clear()
+                    self.send_display()
+                    self.clear_sendUID()
         
         with self._queue_lock:
             if self._results_mode:
                 for pilot_id in self._heat_data:
                     Thread(target=delete, args=(pilot_id,), daemon=True).start()
-            
 
     def onRacePilotDone(self, args):
 
         def done(result):
 
-            self._queue_lock.acquire()
-            pilot_id = result['pilot_id']
-            start_col = self.centerOSD(len(self._pilotdone_message), self._heat_data[pilot_id]['hardware_type'])
-        
-            self.set_sendUID(self._heat_data[result['pilot_id']]['UID'])
-            self.send_clear_row(self._currentlap_row, self._heat_data[pilot_id]['hardware_type'])
-            self.send_clear_row(self._status_row, self._heat_data[pilot_id]['hardware_type'])
-            self.send_msg(self._status_row, start_col, self._pilotdone_message)
-
-            if self._results_mode:
-                self.send_msg(10, 11, "PLACEMENT:")
-                self.send_msg(10, 30, str(result['position']))
-                self.send_msg(11, 11, "LAPS COMPLETED:")
-                self.send_msg(11, 30, str(result['laps']))
-                self.send_msg(12, 11, "FASTEST LAP:")
-                self.send_msg(12, 30, result['fastest_lap'])
-                self.send_msg(13, 11, "FASTEST " + str(result['consecutives_base']) +  " CONSEC:")
-                self.send_msg(13, 30, result['consecutives'])
-                self.send_msg(14, 11, "TOTAL TIME:")
-                self.send_msg(14, 30, result['total_time'])
+            with self._queue_lock:
+                pilot_id = result['pilot_id']
+                start_col = self.centerOSD(len(self._pilotdone_message), self._heat_data[pilot_id]['hardware_type'])
             
-            self.send_display()
-            self.clear_sendUID()
-            delay = copy.copy(self._finish_uptime)
-            self._queue_lock.release()
+                self.set_sendUID(self._heat_data[result['pilot_id']]['UID'])
+                self.send_clear_row(self._currentlap_row, self._heat_data[pilot_id]['hardware_type'])
+                self.send_clear_row(self._status_row, self._heat_data[pilot_id]['hardware_type'])
+                self.send_msg(self._status_row, start_col, self._pilotdone_message)
+
+                if self._results_mode:
+                    self.send_msg(10, 11, "PLACEMENT:")
+                    self.send_msg(10, 30, str(result['position']))
+                    self.send_msg(11, 11, "LAPS COMPLETED:")
+                    self.send_msg(11, 30, str(result['laps']))
+                    self.send_msg(12, 11, "FASTEST LAP:")
+                    self.send_msg(12, 30, result['fastest_lap'])
+                    self.send_msg(13, 11, "FASTEST " + str(result['consecutives_base']) +  " CONSEC:")
+                    self.send_msg(13, 30, result['consecutives'])
+                    self.send_msg(14, 11, "TOTAL TIME:")
+                    self.send_msg(14, 30, result['total_time'])
+                
+                self.send_display()
+                self.clear_sendUID()
+                delay = copy.copy(self._finish_uptime)
 
             time.sleep(delay)
 
-            self._queue_lock.acquire()
-            self.set_sendUID(self._heat_data[pilot_id]['UID'])
-            self.send_clear_row(self._status_row, self._heat_data[pilot_id]['hardware_type'])
-            self.send_display()
-            self.clear_sendUID()
-            self._queue_lock.release()
+            with self._queue_lock:
+                self.set_sendUID(self._heat_data[pilot_id]['UID'])
+                self.send_clear_row(self._status_row, self._heat_data[pilot_id]['hardware_type'])
+                self.send_display()
+                self.clear_sendUID()
 
         results = args['results']['by_race_time']
         with self._queue_lock:
@@ -685,12 +660,11 @@ class elrsBackpack(VRxController):
     def onLapsClear(self, _args):
         
         def clear(pilot_id):
-            self._queue_lock.acquire()
-            self.set_sendUID(self._heat_data[pilot_id]['UID'])
-            self.send_clear()
-            self.send_display()
-            self.clear_sendUID()
-            self._queue_lock.release()
+            with self._queue_lock:
+                self.set_sendUID(self._heat_data[pilot_id]['UID'])
+                self.send_clear()
+                self.send_display()
+                self.clear_sendUID()
 
         with self._queue_lock:
             self._finished_pilots = []
@@ -701,23 +675,21 @@ class elrsBackpack(VRxController):
     def onSendMessage(self, args):
         
         def notify(pilot):
-            self._queue_lock.acquire()
-            self.set_sendUID(self._heat_data[pilot]['UID'])
-            start_col = self.centerOSD(len(args['message']), self._heat_data[pilot]['hardware_type'])
-            self.send_msg(self._announcement_row, start_col, str.upper(args['message']))
-            self.send_display()
-            self.clear_sendUID()
-            delay = copy.copy(self._announcement_uptime)
-            self._queue_lock.release()
+            with self._queue_lock:
+                self.set_sendUID(self._heat_data[pilot]['UID'])
+                start_col = self.centerOSD(len(args['message']), self._heat_data[pilot]['hardware_type'])
+                self.send_msg(self._announcement_row, start_col, str.upper(args['message']))
+                self.send_display()
+                self.clear_sendUID()
+                delay = copy.copy(self._announcement_uptime)
 
             time.sleep(delay)
 
-            self._queue_lock.acquire()
-            self.set_sendUID(self._heat_data[pilot]['UID'])
-            self.send_clear_row(self._announcement_row, self._heat_data[pilot]['hardware_type'])
-            self.send_display()
-            self.clear_sendUID()
-            self._queue_lock.release()
+            with self._queue_lock:
+                self.set_sendUID(self._heat_data[pilot]['UID'])
+                self.send_clear_row(self._announcement_row, self._heat_data[pilot]['hardware_type'])
+                self.send_display()
+                self.clear_sendUID()
 
         with self._queue_lock:
             for pilot_id in self._heat_data:
