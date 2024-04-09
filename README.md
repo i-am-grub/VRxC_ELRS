@@ -1,10 +1,5 @@
 # RotorHazard VRx Control for the ExpressLRS Backpack
 
-> [!CAUTION]
-> This plugin is still in developmental state. Please do not install this plugin for events unless you acknowledge the risk of unstable features being present. The two associated risks include:
->1. Unwanted text being left on pilots' OSD when it is expected to be removed
->2. Text not being added to pilots' OSD when it should be. 
-
 > [!NOTE]
 >The timeline for the first offical release of this plugin is currently dependent on the stability of the following items:
 >- this plugin
