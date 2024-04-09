@@ -25,23 +25,7 @@ To install, follow the instructions on the [latest release](https://github.com/i
 
 ### Installing Backpack on HDZero Goggles
 
-1. Use the ExpressLRS Configurator to generate the firmware file. It is important to use the following steps to force the overwrite of the default firmware on the goggles.
-    1. Open the ExpressLRS Configurator
-    2. Select the Backpack tab
-    3. Select release `1.4.1`
-    4. Select the `HDZero Goggles` category
-    5. Select the `Built-in ESP32 Backpack`
-    6. Select the `WIFI` Flashing Method
-    7. Enter your bindphrase. You can **NOT** change this on backpack's configuration page.
-    8. Select `Build` (do not use FLASH)
-
-> [!IMPORTANT]
-> If your goggles did not come with backpack firmware, you should follow [these instructions](https://www.expresslrs.org/hardware/backpack/hdzero-goggles/) instead of continuing with listed installation instructions
-
-2. Start the Backpack's Wifi (the the goggle's wifi)
-3. Connect your computer to the backpack's wifi and open the backpack's configuration page.
-    - If you haven't used it before, the webpage is similar to the default ExpressLRS configuration page.
-4. Upload the generated file (e.g. `firmware.bin`) through the configuration page. If it show a warning about overwriting the previous firmware because it has a different name, force the overwrite.
+To install, follow the instructions on the [latest release](https://github.com/i-am-grub/VRxC_ELRS/releases) of the plugin.
 
 ## Control the Race from the Race Director's Transmitter
 
