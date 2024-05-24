@@ -114,20 +114,22 @@ class elrsBackpack(VRxController):
         logger.info("Attempting to find backpack")
         
         ports = list(serial.tools.list_ports.comports())
-        s = serial.Serial(baudrate=460800,
-                        bytesize=8, parity='N', stopbits=1,
-                        timeout=0.01, xonxoff=0, rtscts=0,
-                        write_timeout=0.01)
+        for port in ports:
+            if port.device == "/dev/ttyAMA0":
+                ports.remove(port)
+                break
         
         #
         # Search for connected backpack
         #
 
         for port in ports:
-            s.port = port.device
             
             try:
-                s.open()
+                s = serial.Serial(port=port.device, baudrate=460800,
+                                  bytesize=8, parity='N', stopbits=1,
+                                  timeout=0.1, xonxoff=0, rtscts=0,
+                                  write_timeout=0.1)
             except:
                 logger.warning('Failed to open serial device. Attempting to connect to new device...')
                 continue
