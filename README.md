@@ -214,7 +214,7 @@ Row to show announcements such as when a race is scheduled. This row is also use
 
 
 ### 3D Printed Case
-Avaliable on Printables
+Available on Printables
 https://www.printables.com/model/762529-esp32-wroom-32u-casing
 
 
