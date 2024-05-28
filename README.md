@@ -211,3 +211,13 @@ Row to show announcements such as when a race is scheduled. This row is also use
 
 > [!NOTE]
 > Rows 10-14 are used by `Show Post-Race Results` when it is enabled. You can use these rows if the feature is disabled.
+
+
+### 3D Printed Case
+Avaliable on Printables
+https://www.printables.com/model/762529-esp32-wroom-32u-casing
+
+
+![Case](docs/3DPrint/esp_case.jpg)
+
+
