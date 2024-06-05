@@ -114,10 +114,16 @@ class elrsBackpack(VRxController):
         logger.info("Attempting to find backpack")
         
         ports = list(serial.tools.list_ports.comports())
+
+        AVOIDED_PORTS = ["/dev/ttyAMA0", "/dev/ttyAMA10", "COM1"]
+        REMOVE_PORTS = []
+        
         for port in ports:
-            if port.device == "/dev/ttyAMA0":
-                ports.remove(port)
-                break
+            if port.device in AVOIDED_PORTS:
+                REMOVE_PORTS.append(port)
+        
+        for port in REMOVE_PORTS:
+            ports.remove(port)
         
         #
         # Search for connected backpack
@@ -134,7 +140,8 @@ class elrsBackpack(VRxController):
                 logger.warning('Failed to open serial device. Attempting to connect to new device...')
                 continue
             
-            time.sleep(1.5) # Needed for connecting to DevKitC
+            time.sleep(1.5)
+            s.read_all()
 
             try:
                 s.write(version_message)
@@ -629,16 +636,16 @@ class elrsBackpack(VRxController):
                 self.send_msg(self._status_row, start_col, self._pilotdone_message)
 
                 if self._results_mode:
-                    self.send_msg(10, 11, "PLACEMENT:")
-                    self.send_msg(10, 30, str(result['position']))
-                    self.send_msg(11, 11, "LAPS COMPLETED:")
-                    self.send_msg(11, 30, str(result['laps']))
-                    self.send_msg(12, 11, "FASTEST LAP:")
-                    self.send_msg(12, 30, result['fastest_lap'])
-                    self.send_msg(13, 11, "FASTEST " + str(result['consecutives_base']) +  " CONSEC:")
-                    self.send_msg(13, 30, result['consecutives'])
-                    self.send_msg(14, 11, "TOTAL TIME:")
-                    self.send_msg(14, 30, result['total_time'])
+                    self.send_msg(11, 11, "PLACEMENT:")
+                    self.send_msg(11, 30, str(result['position']))
+                    self.send_msg(12, 11, "LAPS COMPLETED:")
+                    self.send_msg(12, 30, str(result['laps']))
+                    self.send_msg(13, 11, "FASTEST LAP:")
+                    self.send_msg(13, 30, result['fastest_lap'])
+                    self.send_msg(14, 11, "FASTEST " + str(result['consecutives_base']) +  " CONSEC:")
+                    self.send_msg(14, 30, result['consecutives'])
+                    self.send_msg(15, 11, "TOTAL TIME:")
+                    self.send_msg(15, 30, result['total_time'])
                 
                 self.send_display()
                 self.clear_sendUID()
@@ -680,7 +687,7 @@ class elrsBackpack(VRxController):
             with self._queue_lock:
                 self.set_sendUID(self._heat_data[pilot]['UID'])
                 start_col = self.centerOSD(len(args['message']), self._heat_data[pilot]['hardware_type'])
-                self.send_msg(self._announcement_row, start_col, str.upper(args['message']))
+                self.send_msg(self._announcement_row, start_col, f"x {str.upper(args['message'])} w")
                 self.send_display()
                 self.clear_sendUID()
                 delay = copy.copy(self._announcement_uptime)

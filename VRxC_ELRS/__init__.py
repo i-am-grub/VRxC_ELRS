@@ -102,16 +102,16 @@ def initialize(rhapi):
     _announcement_uptime = UIField('_announcement_uptime', 'Announcement Uptime', desc='decaseconds', field_type = UIFieldType.BASIC_INT, value=50)
     rhapi.fields.register_option(_announcement_uptime, 'elrs_vrxc')
 
-    _status_row = UIField('_status_row', 'Race Status Row', desc='Use rows between 0-9 or 15-17', field_type = UIFieldType.BASIC_INT, value=5)
+    _status_row = UIField('_status_row', 'Race Status Row', desc='Use rows between 0-10 or 16-17', field_type = UIFieldType.BASIC_INT, value=5)
     rhapi.fields.register_option(_status_row, 'elrs_vrxc')
 
-    _currentlap_row = UIField('_currentlap_row', 'Current Lap/Position Row', desc='Use rows between 0-9 or 15-17', field_type = UIFieldType.BASIC_INT, value=0)
+    _currentlap_row = UIField('_currentlap_row', 'Current Lap/Position Row', desc='Use rows between 0-10 or 16-17', field_type = UIFieldType.BASIC_INT, value=0)
     rhapi.fields.register_option(_currentlap_row, 'elrs_vrxc')
 
-    _lapresults_row = UIField('_lapresults_row', 'Lap/Gap Results Row', desc='Use rows between 0-9 or 15-17', field_type = UIFieldType.BASIC_INT, value=15)
+    _lapresults_row = UIField('_lapresults_row', 'Lap/Gap Results Row', desc='Use rows between 0-10 or 16-17', field_type = UIFieldType.BASIC_INT, value=1)
     rhapi.fields.register_option(_lapresults_row, 'elrs_vrxc')
 
-    _announcement_row = UIField('_announcement_row', 'Announcement Row', desc='Use rows between 0-9 or 15-17', field_type = UIFieldType.BASIC_INT, value=6)
+    _announcement_row = UIField('_announcement_row', 'Announcement Row', desc='Use rows between 0-10 or 16-17', field_type = UIFieldType.BASIC_INT, value=2)
     rhapi.fields.register_option(_announcement_row, 'elrs_vrxc')
 
     #
