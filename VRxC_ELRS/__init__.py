@@ -6,7 +6,6 @@ import util.RH_GPIO as RH_GPIO
 if RH_GPIO.is_real_hw_GPIO():
     import time
 
-from plugins.VRxC_ELRS.hardware import hardwareOptions
 import plugins.VRxC_ELRS.elrsBackpack as elrsBackpack
 
 logger = logging.getLogger(__name__)
@@ -25,18 +24,13 @@ def initialize(rhapi):
 
     rhapi.events.on(Evt.VRX_INITIALIZE, controller.registerHandlers)
     rhapi.events.on(Evt.PILOT_ALTER, controller.onPilotAlter)
-    rhapi.events.on(Evt.OPTION_SET, controller.setOptions)
 
     #
     # Setup UI
     #
-    
-    type_hardware = []
-    for option in hardwareOptions:
-        type_hardware.append(UIFieldSelectOption(label=option.name, value=option.value))
 
-    hardware = UIField('hardware_type', 'ELRS VRx Hardware', field_type = UIFieldType.SELECT, options = type_hardware)
-    rhapi.fields.register_pilot_attribute(hardware)
+    active = UIField('elrs_active', 'Enable ELRS VRx', field_type = UIFieldType.CHECKBOX)
+    rhapi.fields.register_pilot_attribute(active)
 
     elrs_bindphrase = UIField(name = 'comm_elrs', label = 'ELRS BP Bindphrase', field_type = UIFieldType.TEXT)
     rhapi.fields.register_pilot_attribute(elrs_bindphrase)
@@ -49,8 +43,11 @@ def initialize(rhapi):
     # Check Boxes
     #
 
-    _race_control = UIField('_race_control', 'Race Control from Transmitter', desc='Allows the race director to remotely control races', field_type = UIFieldType.CHECKBOX)
-    rhapi.fields.register_option(_race_control, 'elrs_settings')
+    _race_start = UIField('_race_start', 'Start Race from Transmitter', desc='Allows the race director to remotely start races', field_type = UIFieldType.CHECKBOX)
+    rhapi.fields.register_option(_race_start, 'elrs_settings')
+
+    _race_stop = UIField('_race_stop', 'Stop Control from Transmitter', desc='Allows the race director to remotely stop races', field_type = UIFieldType.CHECKBOX)
+    rhapi.fields.register_option(_race_stop, 'elrs_settings')
     
     _heat_name = UIField('_heat_name', 'Show Race Name on Stage', field_type = UIFieldType.CHECKBOX)
     rhapi.fields.register_option(_heat_name, 'elrs_vrxc')
@@ -83,7 +80,7 @@ def initialize(rhapi):
     _racestop_message = UIField('_racestop_message', 'Race Stop Message', desc='lowercase letters are symbols', field_type = UIFieldType.TEXT, value="w  LAND NOW!  x")
     rhapi.fields.register_option(_racestop_message, 'elrs_vrxc')
 
-    _leader_message = UIField('_leader_message', 'Race Leader Message', desc='lowercase letters are symbols', field_type = UIFieldType.TEXT, value="x RACE LEADER w")
+    _leader_message = UIField('_leader_message', 'Race Leader Message', desc='lowercase letters are symbols', field_type = UIFieldType.TEXT, value="RACE LEADER")
     rhapi.fields.register_option(_leader_message, 'elrs_vrxc')
 
     #
@@ -102,17 +99,20 @@ def initialize(rhapi):
     _announcement_uptime = UIField('_announcement_uptime', 'Announcement Uptime', desc='decaseconds', field_type = UIFieldType.BASIC_INT, value=50)
     rhapi.fields.register_option(_announcement_uptime, 'elrs_vrxc')
 
-    _status_row = UIField('_status_row', 'Race Status Row', desc='Use rows between 0-10 or 16-17', field_type = UIFieldType.BASIC_INT, value=5)
+    _status_row = UIField('_status_row', 'Race Status Row', desc='Use rows between 0-17', field_type = UIFieldType.BASIC_INT, value=5)
     rhapi.fields.register_option(_status_row, 'elrs_vrxc')
 
-    _currentlap_row = UIField('_currentlap_row', 'Current Lap/Position Row', desc='Use rows between 0-10 or 16-17', field_type = UIFieldType.BASIC_INT, value=0)
+    _currentlap_row = UIField('_currentlap_row', 'Current Lap/Position Row', desc='Use rows between 0-17', field_type = UIFieldType.BASIC_INT, value=0)
     rhapi.fields.register_option(_currentlap_row, 'elrs_vrxc')
 
-    _lapresults_row = UIField('_lapresults_row', 'Lap/Gap Results Row', desc='Use rows between 0-10 or 16-17', field_type = UIFieldType.BASIC_INT, value=1)
+    _lapresults_row = UIField('_lapresults_row', 'Lap/Gap Results Row', desc='Use rows between 0-17', field_type = UIFieldType.BASIC_INT, value=1)
     rhapi.fields.register_option(_lapresults_row, 'elrs_vrxc')
 
-    _announcement_row = UIField('_announcement_row', 'Announcement Row', desc='Use rows between 0-10 or 16-17', field_type = UIFieldType.BASIC_INT, value=2)
+    _announcement_row = UIField('_announcement_row', 'Announcement Row', desc='Use rows between 0-17', field_type = UIFieldType.BASIC_INT, value=2)
     rhapi.fields.register_option(_announcement_row, 'elrs_vrxc')
+
+    _results_row = UIField('_results_row', 'Results Rows', desc='Use rows between 0-16. Uses two rows.', field_type = UIFieldType.BASIC_INT, value=14)
+    rhapi.fields.register_option(_results_row, 'elrs_vrxc')
 
     #
     # Quick Buttons
