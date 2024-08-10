@@ -105,13 +105,13 @@ def initialize(rhapi):
     _currentlap_row = UIField('_currentlap_row', 'Current Lap/Position Row', desc='Use rows between 0-17', field_type = UIFieldType.BASIC_INT, value=0)
     rhapi.fields.register_option(_currentlap_row, 'elrs_vrxc')
 
-    _lapresults_row = UIField('_lapresults_row', 'Lap/Gap Results Row', desc='Use rows between 0-17', field_type = UIFieldType.BASIC_INT, value=1)
+    _lapresults_row = UIField('_lapresults_row', 'Lap/Gap Results Row', desc='Use rows between 0-17', field_type = UIFieldType.BASIC_INT, value=15)
     rhapi.fields.register_option(_lapresults_row, 'elrs_vrxc')
 
     _announcement_row = UIField('_announcement_row', 'Announcement Row', desc='Use rows between 0-17', field_type = UIFieldType.BASIC_INT, value=2)
     rhapi.fields.register_option(_announcement_row, 'elrs_vrxc')
 
-    _results_row = UIField('_results_row', 'Results Rows', desc='Use rows between 0-16. Uses two rows.', field_type = UIFieldType.BASIC_INT, value=14)
+    _results_row = UIField('_results_row', 'Results Rows', desc='Use rows between 0-16. Uses two rows.', field_type = UIFieldType.BASIC_INT, value=13)
     rhapi.fields.register_option(_results_row, 'elrs_vrxc')
 
     #

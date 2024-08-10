@@ -16,7 +16,6 @@ from plugins.VRxC_ELRS.msp import msptypes, msp_message
 
 logger = logging.getLogger(__name__)
 
-
 class elrsBackpack(VRxController):
 
     _backpack_queue = gevent.queue.Queue(maxsize=200)
@@ -195,7 +194,7 @@ class elrsBackpack(VRxController):
         bindingPhraseHash = [
             x
             for x in hashlib.md5(
-                ('-DMY_BINDING_PHRASE="' + bindphrase + '"').encode()
+                (f'-DMY_BINDING_PHRASE="{bindphrase}"').encode()
             ).digest()[0:6]
         ]
         if (bindingPhraseHash[0] % 2) == 1:
@@ -695,25 +694,21 @@ class elrsBackpack(VRxController):
             )
 
             if self._rhapi.db.option("_results_mode") == "1":
-                self.send_msg(results_row1, 11, "PLACEMENT:")
-                self.send_msg(results_row1, 30, str(result["position"]))
+                placement_message = F'PLACEMENT: {result["position"]}'
+                place_col = self.centerOSD(len(placement_message))
+                self.send_msg(results_row1, place_col, placement_message)
 
                 if win_condition == WinCondition.FASTEST_CONSECUTIVE:
-                    self.send_msg(
-                        results_row2,
-                        11,
-                        f"FASTEST {result['consecutives_base']} CONSEC:",
-                    )
-                    self.send_msg(results_row2, 30, result["consecutives"])
+                    win_message = f'FASTEST {result["consecutives_base"]} CONSEC: {result["consecutives"]}'
                 elif win_condition == WinCondition.FASTEST_LAP:
-                    self.send_msg(results_row2, 11, "FASTEST LAP:")
-                    self.send_msg(results_row2, 30, result["fastest_lap"])
+                    win_message = f'FASTEST LAP: {result["fastest_lap"]}'
                 elif win_condition == WinCondition.FIRST_TO_LAP_X:
-                    self.send_msg(results_row2, 11, "TOTAL TIME:")
-                    self.send_msg(results_row2, 30, result["total_time"])
+                    win_message = f'TOTAL TIME: {result["total_time"]}'
                 else:
-                    self.send_msg(results_row2, 11, "LAPS COMPLETED:")
-                    self.send_msg(results_row2, 30, str(result["laps"]))
+                    win_message = f'LAPS COMPLETED: {result["laps"]}'
+                    
+                win_col = self.centerOSD(len(win_message))
+                self.send_msg(results_row2, win_col, win_message)
 
             self.send_display()
             self.clear_sendUID()
