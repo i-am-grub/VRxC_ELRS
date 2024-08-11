@@ -1,4 +1,5 @@
 import logging
+import gevent
 
 from eventmanager import Evt
 from RHUI import UIField, UIFieldType, UIFieldSelectOption
@@ -16,9 +17,12 @@ def initialize(rhapi):
         logger.info("Turning on GPIO pins for NuclearHazard boards")
         RH_GPIO.setmode(RH_GPIO.BCM)
         RH_GPIO.setup(16, RH_GPIO.OUT, initial=RH_GPIO.HIGH)
-        time.sleep(0.05)
+        gevent.sleep(0.5)
         RH_GPIO.setup(11, RH_GPIO.OUT, initial=RH_GPIO.HIGH)
-        time.sleep(0.05)
+        gevent.sleep(0.5)
+        RH_GPIO.output(11, RH_GPIO.LOW)
+        gevent.sleep()
+        RH_GPIO.output(11, RH_GPIO.HIGH)
 
     controller = elrsBackpack.elrsBackpack('elrs', 'ELRS', rhapi)
 
@@ -29,11 +33,11 @@ def initialize(rhapi):
     # Setup UI
     #
 
-    active = UIField('elrs_active', 'Enable ELRS VRx', field_type = UIFieldType.CHECKBOX)
-    rhapi.fields.register_pilot_attribute(active)
-
     elrs_bindphrase = UIField(name = 'comm_elrs', label = 'ELRS BP Bindphrase', field_type = UIFieldType.TEXT)
     rhapi.fields.register_pilot_attribute(elrs_bindphrase)
+
+    active = UIField('elrs_active', 'Enable ELRS OSD', field_type = UIFieldType.CHECKBOX)
+    rhapi.fields.register_pilot_attribute(active)
 
     rhapi.ui.register_panel('elrs_settings', 'ELRS Backpack General Settings', 'settings', order=0)
 
@@ -46,7 +50,7 @@ def initialize(rhapi):
     _race_start = UIField('_race_start', 'Start Race from Transmitter', desc='Allows the race director to remotely start races', field_type = UIFieldType.CHECKBOX)
     rhapi.fields.register_option(_race_start, 'elrs_settings')
 
-    _race_stop = UIField('_race_stop', 'Stop Control from Transmitter', desc='Allows the race director to remotely stop races', field_type = UIFieldType.CHECKBOX)
+    _race_stop = UIField('_race_stop', 'Stop Race from Transmitter', desc='Allows the race director to remotely stop races', field_type = UIFieldType.CHECKBOX)
     rhapi.fields.register_option(_race_stop, 'elrs_settings')
     
     _heat_name = UIField('_heat_name', 'Show Race Name on Stage', field_type = UIFieldType.CHECKBOX)
@@ -58,7 +62,7 @@ def initialize(rhapi):
     _gap_mode = UIField('_gap_mode', 'Show Gap Time', desc='off - shows lap time', field_type = UIFieldType.CHECKBOX)
     rhapi.fields.register_option(_gap_mode, 'elrs_vrxc')
 
-    _results_mode = UIField('_results_mode', 'Show Post-Race Results', desc="Uses rows 10-14", field_type = UIFieldType.CHECKBOX)
+    _results_mode = UIField('_results_mode', 'Show Post-Race Results', desc="Show pilot's results upon race completion", field_type = UIFieldType.CHECKBOX)
     rhapi.fields.register_option(_results_mode, 'elrs_vrxc')
 
     #
@@ -121,5 +125,3 @@ def initialize(rhapi):
     rhapi.ui.register_quickbutton('elrs_settings', 'enable_bind', "Start Backpack Bind", controller.activate_bind)
     rhapi.ui.register_quickbutton('elrs_settings', 'test_osd', "Test Bound Backpack's OSD", controller.test_osd)
     rhapi.ui.register_quickbutton('elrs_settings', 'enable_wifi', "Start Backpack WiFi", controller.activate_wifi)
-    if RH_GPIO.is_real_hw_GPIO():
-        rhapi.ui.register_quickbutton('elrs_settings', 'reboot_esp', "Reboot NuclearHazard ESP32", controller.reboot_esp)

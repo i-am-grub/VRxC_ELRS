@@ -1,10 +1,10 @@
 # RotorHazard VRx Control for the ExpressLRS Backpack
 
 > [!NOTE]
->The timeline for the first offical release of this plugin is currently dependent on the stability of the following items:
->- this plugin
->- a new [timer backpack](https://github.com/ExpressLRS/Backpack/pull/114)
->- the backpack for the HDZero goggles
+> The use of this plugin is dependent on the release of the v1.5 of the ELRS Backpack. It is recommended to wait for this release of the backpack if not yet avaliable.
+> This version provides the following critial features for the plugin to work:
+> - Timer backpack targets for RotorHazard
+> - Improvements to the HDZero goggle's backpack ability to rapidly recieve OSD messages
 
 This is a plugin being developed for the RotorHazard timing system with the following features: 
 - [X] Send OSD messages to pilots using compatible equipment (such as the [HDZero goggles](https://www.youtube.com/watch?v=VXwaUoA16jc)) 
@@ -13,23 +13,72 @@ This is a plugin being developed for the RotorHazard timing system with the foll
 
 ## Requirements
 
-- RotorHazard v4.0.0+ is required to run the plugin
-- A connected device that can run the ExpressLRS Backpack
+- RotorHazard v4.1.0+ is required to run the plugin
+- A connected device that can run the ExpressLRS Timer Backpack (avaliable in the v1.5 release)
     - Connections over USB or UART will both work
 
 ## Installation
 
-### Installing RH Plugin and Backpack
+### Installing RH Plugin
 
 To install, follow the instructions on the [latest release](https://github.com/i-am-grub/VRxC_ELRS/releases) of the plugin.
 
 ### Installing Backpack on HDZero Goggles
 
-To install, follow the instructions on the [latest release](https://github.com/i-am-grub/VRxC_ELRS/releases) of the plugin.
+To build the firmware for your HDZero goggles, use the [ExpressLRS Configurator](https://github.com/ExpressLRS/ExpressLRS-Configurator/releases).
+Select `Backpack` on the left side menu. Select the 1.5.0 release (or a newer version), find the HDZero goggle target, enter your bindphrase, and
+build the firmware.
+
+To install, follow the instructions on the [ExpressLRS Docs](https://www.expresslrs.org/hardware/backpack/hdzero-goggles/).
+
+### Installing the Timer Backpack
+
+Available devices for the RotorHazard Timer Backpack category in the ELRS Configurator. It is recommended to use a chip that is capable of connecting an external wifi antenna.
+
+| ELRS Device           | Compatible Hardware                                                                                                   |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| EP82 Module (DIY)     | [ESP8266 NodeMCU](https://a.co/d/9vgX3Tx)                                                                             |
+| EP32 Module (DIY)     | [ESP32-DevKitC](https://a.co/d/62OGBgG)                                                                               |
+| EP32C3 Module (DIY)   | [ESP32-C3-DevKitM-1U](https://www.digikey.com/en/products/detail/espressif-systems/ESP32-C3-DEVKITM-1U/15198974)      |
+| EP32S3 Module (DIY)   | [ESP32-S3-DevKitC-1U](https://www.digikey.com/en/products/detail/espressif-systems/ESP32-S3-DEVKITC-1U-N8R8/16162636) |
+| NuclearHazard         | [NuclearHazard Board](https://www.etsy.com/listing/1428199972/nuclearhazard-core-kit-case-and-rx-sold) v7 or newer    |
+
+While other specific development boards with similar chipsets may be supported by the targets in the table, it is not guaranteed that they work.
+For example, the Seeed Studio XIAO ESP32C3/S3 board do not work with the targets listed above, but when using the 
+[ExpressLRS Toolchain](https://www.expresslrs.org/software/toolchain-install/) for building the backpack firmware, you can
+change the platformio settings to build the firmware to use the XIAO boards for the timer backpack.
+
+#### Non-NuclearHazard Hardware
+
+To build and flash the firmware, use the [ExpressLRS Configurator](https://github.com/ExpressLRS/ExpressLRS-Configurator/releases)
+1. Connect the device to your computer over USB.
+2. Select `Backpack` on the left side menu. 
+3. Select the 1.5.0 release (or a newer version) 
+4. Select the RotorHazard device category
+5. Select the target for your device
+6. Select the UART flashing method
+7. Enter the bindphrase (for race control from the director's transmitter)
+8. Select the COM port for your device
+9. Build and flash the firmware
+
+#### NuclearHazard Hardware
+
+To build the firmware, use the [ExpressLRS Configurator](https://github.com/ExpressLRS/ExpressLRS-Configurator/release)
+1. Select `Backpack` on the left side menu. 
+2. Select the 1.5.0 release (or a newer version) 
+3. Select the RotorHazard device category
+4. Select NuclearHazard as your device
+5. Select the WIFI flashing method
+6. Enter the bindphrase (for race control from the director's transmitter)
+7. Build the firmware
+8. Follow [this guide](https://nuclearquads.github.io/vrxc) to flash the on board ESP32. Instead of downloading the backpack bin files, use the files you built with the configurator.
 
 ## Control the Race from the Race Director's Transmitter
 
-There is a feature to control the race from the Race Director's transmitter by tracking the position of the `DVR Rec` switch setup within the ransmitter's backpack. Currently only starting and stopping the race are supported.
+There is a feature to control the race from the race director's transmitter by tracking the position of the `DVR Rec` switch setup within the transmitter's backpack. It currently works
+by binding the race timer's backpack to the race director's bindphrase similarily like you would do with the transmitter and VRx backpacks. 
+
+Currently only starting and stopping the race are supported. Setting up this feature will not prevent other users from recieving OSD messages.
 
 > [!IMPORTANT]
 > This feature requires the Race Director to have the ELRS Backpack setup on their transmitter. Please ensure this is setup before completing the following instructions.
@@ -42,10 +91,7 @@ There is a feature to control the race from the Race Director's transmitter by t
 > [!NOTE]
 > Note: This will not not stop the ability to start recording DVR through this switch. It is just a state that the race timer's backpack listens for.
 
-> [!CAUTION]
-> It is recommended to not use the same AUX channel as your ARM switch. 
-
-2. Bind the Race Timer backpack to the Transmitter
+2. Bind the Race Timer backpack to the Transmitter. This step can be skipped if flashing the timer's backpack with firmware that contains the race director's bindphrase.
     1. Start the RotorHazard server with the ESP32 connected.
     2. Navigate to the `ELRS Backpack General Settings` panel.
     3. Click the `Start Backpack Bind` button.
@@ -54,7 +100,7 @@ There is a feature to control the race from the Race Director's transmitter by t
 To test to see if the backpack was bound sucessfully, navigate the the `Race` tab within RotorHazard, and use the `DVR Rec` switch to start the race. `Race Control from Transmitter` will need to be enabled under `ELRS Backpack General Settings`
 
 > [!TIP]
-> Anytime the backpack needs to be bound to a new transmitter, it will be easiest to reflash the ESP32 with the firmware in the latest release, and then rebind. Attempting to rebind after the 
+> Anytime the backpack needs to be bound to a new transmitter, it will be easiest to reflash the ESP32 with the firmware in the latest release, and then rebind.
 
 ## Settings
 
@@ -62,44 +108,25 @@ To test to see if the backpack was bound sucessfully, navigate the the `Race` ta
 
 ![Pilot Settings](docs/pilot_atts.png)
 
-#### ELRS VRx Hardware : SELECTOR
-
-Select the type of hardware that the pilot is using. To turn off OSD messages for a pilot, leave this option blank or set to `NONE`. In the graphic showing the pilot settings at the start of this section, Pilot 1 and Pilot 2 have OSD messages enabled - all other pilots have the option disabled
-
-> [!TIP]
-> Less pilots with OSD messages turned on means less delay is present for pilots with OSD messages turned on.
-
 #### Backpack Bindphrase : TEXT
 
 The pilot's individual bindphrase for their backpack. If a bindphrase is not set, the pilot's callsign will be used as the bindphrase instead.
 
-### General Settings
+#### Enable ELRS OSD : CHECKBOX
+
+Turns the pilot's ELRS OSD on/off
+
+### ELRS Backpack General Settings
 
 ![General Settings](docs/general_settings.png)
 
-#### Race Control from Transmitter : CHECKBOX
+#### Start Race from Transmitter : CHECKBOX
 
-Toggles the ability for the bound transmitter to start a race. Please navigate to [here](https://github.com/i-am-grub/VRxC_ELRS#control-the-race-from-the-race-directors-transmitter) for binding the backpack.
+Allows the race director to start the race from their transmitter. Please navigate to [here](https://github.com/i-am-grub/VRxC_ELRS#control-the-race-from-the-race-directors-transmitter) for binding the backpack.
 
-#### Number of times to repeat messages : INT
+#### Stop Race from Transmitter : CHECKBOX
 
-A setting to help with dropped packets. This setting determines the number of times a message should be repeated every time it is sent.
-
-> [!IMPORTANT]
-> It is advised that the Race Director should try to find the values that work best for their group. Inceasing the number may help with dropped packets, but will decrease ideal peformance. This setting will likely be removed in the first full release of the plugin. 
-
-> [!TIP]
-> this setting should be tuned to be as low as possible.
-
-#### Send delay between messages : INT
-
-A setting to help with dropped packets. This setting determines the speed at which the backpack sends messages.
-
-> [!IMPORTANT]
-> It is advised that the Race Director should try to find the values that work best for their group. Inceasing the number may help with dropped packets, but will decrease ideal peformance. This setting will likely be removed in the first full release of the plugin.
-
-> [!TIP]
-> this setting should be tuned to be as low as possible.
+Allows the race director to stop the race from their transmitter. Please navigate to [here](https://github.com/i-am-grub/VRxC_ELRS#control-the-race-from-the-race-directors-transmitter) for binding the backpack.
 
 #### Start Backpack Bind : BUTTON
 
@@ -116,7 +143,7 @@ Will display OSD messages on HDZero goggles with a matching bindphrase. Used for
 
 Starts the backpack's WiFi mode. Used for over-the-air firmware updates.
 
-### OSD Settings
+### ELRS Backpack OSD Settings
 
 ![OSD Settings](docs/osd_settings.png)
 
@@ -129,20 +156,17 @@ Shows the race name on start.
 
 #### Show Current Position and Lap : CHECKBOX
 
-- TOGGLED ON: Only shows current lap
-- TOGGLED OFF: Shows current position and current lap when multiple pilots are in a race
+- TOGGLED ON: Shows current position and current lap when multiple pilots are in a race
+- TOGGLED OFF: Only shows current lap
 
 #### Show Gap Time : CHECKBOX
 
-- TOGGLED ON: Shows lap result time
-- TOGGLED OFF: Shows the gap time to next pilot
+- TOGGLED ON: Shows the gap time to next pilot if using a compatible win condition for the race
+- TOGGLED OFF: Shows lap result time
 
 #### Show Post-Race Results : CHECKBOX
 
-The pilot will be shown results when they finish the race. It is recommeded to turn off `Post Flight Results` in Betaflight so the results won't be overridden when the pilot lands.
-
-> [!NOTE]
-> Rows 10-14 in the HDZero goggle's OSD are used by this feature
+The pilot will be shown results when they finish the race. It is recommeded to have pilots turn off `Post Flight Results` in Betaflight so the results won't be overridden when the pilot lands.
 
 #### Race Stage Message : TEXT
 
@@ -188,31 +212,25 @@ Length of time to show announcements to pilots. (e.g. When a race is scheduled)
 
 Row to show race status messages.
 
-> [!NOTE]
-> Rows 10-14 are used by `Show Post-Race Results` when it is enabled. You can use these rows if the feature is disabled.
-
 #### Current Lap/Position Row : INT
 
 Row to show current lap and position
-
-> [!NOTE]
-> Rows 10-14 are used by `Show Post-Race Results` when it is enabled. You can use these rows if the feature is disabled.
 
 #### Lap/Gap Results Row : INT
 
 Row to show lap or gap time
 
-> [!NOTE]
-> Rows 10-14 are used by `Show Post-Race Results` when it is enabled. You can use these rows if the feature is disabled.
-
 #### Announcement Row : INT
 
 Row to show announcements such as when a race is scheduled. This row is also used by `Show Race Name on Stage`
 
-> [!NOTE]
-> Rows 10-14 are used by `Show Post-Race Results` when it is enabled. You can use these rows if the feature is disabled.
-## 3D Printed Case
-Available on Printables
-https://www.printables.com/model/762529-esp32-wroom-32u-casing
+#### Results Rows : INT
 
-![Case](docs/3DPrint/esp_case.jpg)
+The row to start showing a pilot's post race statistics on. It will also use the follow row in conjunction with the entered one.
+
+## 3D Printed Case
+
+If you are looking to have a case for an externally connected ESP32-DevKitC-1U board, users have commonly liked to use the
+following 3D printable case avaliable on [Printables](https://www.printables.com/model/762529-esp32-wroom-32u-casing)
+
+![Case](docs/3DPrint/wirex-1.webp)

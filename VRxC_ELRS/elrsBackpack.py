@@ -43,14 +43,6 @@ class elrsBackpack(VRxController):
             if status == RaceStatus.STAGING or status == RaceStatus.RACING:
                 self._rhapi.race.stop()
 
-    def reboot_esp(self, _args):
-        if RH_GPIO.is_real_hw_GPIO():
-            RH_GPIO.output(11, RH_GPIO.LOW)
-            gevent.sleep(1)
-            RH_GPIO.output(11, RH_GPIO.HIGH)
-            message = "Cycle Complete"
-            self._rhapi.ui.message_notify(self._rhapi.language.__(message))
-
     #
     # Backpack communications
     #
