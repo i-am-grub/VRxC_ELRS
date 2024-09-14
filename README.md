@@ -1,10 +1,10 @@
 # RotorHazard VRx Control for the ExpressLRS Backpack
 
 > [!NOTE]
-> The use of this plugin is dependent on the release of the v1.5 of the ELRS Backpack. It is recommended to wait for this release of the backpack if not yet avaliable.
-> This version provides the following critial features for the plugin to work:
+> The use of this plugin is dependent on the release of the v1.5 of the ELRS Backpack. It is recommended to wait for this release of the backpack if not yet available.
+> This version provides the following critical features for the plugin to work:
 > - Timer backpack targets for RotorHazard
-> - Improvements to the HDZero goggle's backpack ability to rapidly recieve OSD messages
+> - Improvements to the HDZero goggle's backpack ability to rapidly receive OSD messages
 
 This is a plugin being developed for the RotorHazard timing system with the following features: 
 - [X] Send OSD messages to pilots using compatible equipment (such as the [HDZero goggles](https://www.youtube.com/watch?v=VXwaUoA16jc)) 
@@ -14,7 +14,7 @@ This is a plugin being developed for the RotorHazard timing system with the foll
 ## Requirements
 
 - RotorHazard v4.1.0+ is required to run the plugin
-- A connected device that can run the ExpressLRS Timer Backpack (avaliable in the v1.5 release)
+- A connected device that can run the ExpressLRS Timer Backpack (available in the v1.5 release)
     - Connections over USB or UART will both work
 
 ## Installation
@@ -76,9 +76,9 @@ To build the firmware, use the [ExpressLRS Configurator](https://github.com/Expr
 ## Control the Race from the Race Director's Transmitter
 
 There is a feature to control the race from the race director's transmitter by tracking the position of the `DVR Rec` switch setup within the transmitter's backpack. It currently works
-by binding the race timer's backpack to the race director's bindphrase similarily like you would do with the transmitter and VRx backpacks. 
+by binding the race timer's backpack to the race director's bindphrase similarly like you would do with the transmitter and VRx backpacks. 
 
-Currently only starting and stopping the race are supported. Setting up this feature will not prevent other users from recieving OSD messages.
+Currently only starting and stopping the race are supported. Setting up this feature will not prevent other users from receiving OSD messages.
 
 > [!IMPORTANT]
 > This feature requires the Race Director to have the ELRS Backpack setup on their transmitter. Please ensure this is setup before completing the following instructions.
@@ -89,7 +89,7 @@ Currently only starting and stopping the race are supported. Setting up this fea
     3. Set the AUX channel for `DVR Rec`
 
 > [!NOTE]
-> Note: This will not not stop the ability to start recording DVR through this switch. It is just a state that the race timer's backpack listens for.
+> Note: This will not stop the ability to start recording DVR through this switch. It is just a state that the race timer's backpack listens for.
 
 2. Bind the Race Timer backpack to the Transmitter. This step can be skipped if flashing the timer's backpack with firmware that contains the race director's bindphrase.
     1. Start the RotorHazard server with the ESP32 connected.
@@ -97,7 +97,7 @@ Currently only starting and stopping the race are supported. Setting up this fea
     3. Click the `Start Backpack Bind` button.
     4. Within the ExpressLRS Lua script on the transmitter, click `Bind`
 
-To test to see if the backpack was bound sucessfully, navigate the the `Race` tab within RotorHazard, and use the `DVR Rec` switch to start the race. `Race Control from Transmitter` will need to be enabled under `ELRS Backpack General Settings`
+To test to see if the backpack was bound successfully, navigate to the `Race` tab within RotorHazard, and use the `DVR Rec` switch to start the race. `Race Control from Transmitter` will need to be enabled under `ELRS Backpack General Settings`
 
 > [!TIP]
 > Anytime the backpack needs to be bound to a new transmitter, it will be easiest to reflash the ESP32 with the firmware in the latest release, and then rebind.
@@ -133,15 +133,15 @@ Allows the race director to stop the race from their transmitter. Please navigat
 Puts the timer's backpack into a binding mode for pairing with the race director's transmitter.
 
 > [!TIP]
-> After sucessfully completing this process, the timer's backpack will inherit the race director's bindphrase from the transmitter.
+> After successfully completing this process, the timer's backpack will inherit the race director's bindphrase from the transmitter.
 
 #### Test Bound Backpack's OSD : BUTTON
 
-Will display OSD messages on HDZero goggles with a matching bindphrase. Used for testing if the timer's backpack sucessfully inherited the transmitter's bindphrase.
+Will display OSD messages on HDZero goggles with a matching bindphrase. Used for testing if the timer's backpack successfully inherited the transmitter's bindphrase.
 
 #### Start Backpack WiFi : BUTTON
 
-Starts the backpack's WiFi mode. Used for over-the-air firmware updates.
+Starts the backpack's WiFi mode. Used for over-the-air firmware updates. Open the URL http://elrs_timer.local on your browser.
 
 ### ELRS Backpack OSD Settings
 
@@ -166,7 +166,7 @@ Shows the race name on start.
 
 #### Show Post-Race Results : CHECKBOX
 
-The pilot will be shown results when they finish the race. It is recommeded to have pilots turn off `Post Flight Results` in Betaflight so the results won't be overridden when the pilot lands.
+The pilot will be shown results when they finish the race. It is recommended to have pilots turn off `Post Flight Results` in Betaflight so the results won't be overridden when the pilot lands.
 
 #### Race Stage Message : TEXT
 
@@ -182,11 +182,11 @@ The message shown to pilots when the pilot finishes
 
 #### Race Finish Message : TEXT
 
-The message shown to pilots when the time runs runs out
+The message shown to pilots when the time runs out
 
 #### Race Stop Message : TEXT
 
-The message shown to pilots when the the race is stopped
+The message shown to pilots when the race is stopped
 
 #### Race Leader Message : TEXT
 
@@ -231,6 +231,6 @@ The row to start showing a pilot's post race statistics on. It will also use the
 ## 3D Printed Case
 
 If you are looking to have a case for an externally connected ESP32-DevKitC-1U board, users have commonly liked to use the
-following 3D printable case avaliable on [Printables](https://www.printables.com/model/762529-esp32-wroom-32u-casing)
+following 3D printable case available on [Printables](https://www.printables.com/model/762529-esp32-wroom-32u-casing)
 
 ![Case](docs/3DPrint/wirex-1.webp)
