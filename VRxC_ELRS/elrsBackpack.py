@@ -1,10 +1,12 @@
 import logging
 import hashlib
-import gevent.lock
 import serial
+from enum import IntEnum
 
+import serial.serialutil
 import serial.tools.list_ports
 import gevent
+import gevent.lock
 import gevent.queue
 
 import RHUtils
@@ -16,13 +18,12 @@ from plugins.VRxC_ELRS.msp import msptypes, msp_message
 
 logger = logging.getLogger(__name__)
 
+
 class elrsBackpack(VRxController):
 
-    _backpack_queue = gevent.queue.Queue(maxsize=200)
     _queue_lock = gevent.lock.RLock()
     _backpack_connected = False
-
-    _queue_full = False
+    _backpack_queue = None
 
     def __init__(self, name, label, rhapi):
         super().__init__(name, label)
@@ -50,7 +51,16 @@ class elrsBackpack(VRxController):
     def combine_bytes(self, a, b):
         return (b << 8) | a
 
-    def connection_search(self):
+    def connection_search(self, args={"from_ui": False}):
+
+        if self._backpack_connected and args["from_ui"]:
+            message = "Backpack already connected."
+            self._rhapi.ui.message_notify(self._rhapi.language.__(message))
+            return
+        elif args["from_ui"]:
+            message = "Starting scan for backpack"
+            self._rhapi.ui.message_notify(self._rhapi.language.__(message))
+
         version = msp_message()
         version.set_function(msptypes.MSP_ELRS_GET_BACKPACK_VERSION)
         version_message = version.get_msp()
@@ -87,7 +97,10 @@ class elrsBackpack(VRxController):
                 )
                 continue
 
-            gevent.sleep(1.5)
+            # Some devkits need extra time to establish the connection
+            gevent.sleep(2)
+
+            # Clear out any previous data in the serial buffer
             connection.read_all()
 
             try:
@@ -108,16 +121,19 @@ class elrsBackpack(VRxController):
                     payload = list(connection.read(payload_length))
                     checksum = list(connection.read(1))
 
-                    if (
-                        mode == msptypes.MSP_ELRS_BACKPACK_SET_MODE
-                        or mode == msptypes.MSP_ELRS_GET_BACKPACK_VERSION
-                    ):
-                        logger.info(f"Connected to backpack on {port.device}")
-
+                    if mode == msptypes.MSP_ELRS_GET_BACKPACK_VERSION:
                         version_list = [chr(val) for val in payload]
-                        logger.info(f"Backpack version: {''.join(version_list)}")
+                        backpack_version = "".join(version_list)
+                        message = f"Connected to backpack on {port.device} with firmware version {backpack_version}"
+
+                        if args["from_ui"]:
+                            self._rhapi.ui.message_notify(
+                                self._rhapi.language.__(message)
+                            )
+                        logger.info(message)
 
                         self._backpack_connected = True
+                        self._backpack_queue = gevent.queue.Queue()
                         gevent.spawn(self.backpack_loop, connection)
                         return
 
@@ -138,45 +154,54 @@ class elrsBackpack(VRxController):
                 connection.close()
                 continue
         else:
-            logger.warning("Could not find connected backpack.")
+            message = "Could not find connected backpack."
+            logger.warning(message)
+
+            if args["from_ui"]:
+                self._rhapi.ui.message_notify(self._rhapi.language.__(message))
 
     def backpack_loop(self, connection: serial.Serial):
 
-        while self._backpack_connected:
+        try:
+            while True:
 
-            error_count = 0
-            while not self._backpack_queue.empty():
-                message = self._backpack_queue.get()
-                gevent.sleep(0.00001)
-
-                try:
+                # Writing to backpack
+                while not self._backpack_queue.empty():
+                    # A slight delay is needed between writing messages
+                    # to the connected backpack
+                    gevent.sleep(0.001)
+                    message = self._backpack_queue.get()
                     connection.write(message)
-                except:
-                    error_count += 1
-                    if error_count > 5:
-                        logger.error(
-                            "Failed to write to backpack. Ending connector thread"
-                        )
-                        connection.close()
-                        self._backpack_connected = False
-                        return
 
-            packet = list(connection.read(8))
-            if len(packet) == 8:
-                if packet[:3] == [ord("$"), ord("X"), ord("<")]:
-                    mode = self.combine_bytes(packet[4], packet[5])
-                    payload_length = self.combine_bytes(packet[6], packet[7])
-                    payload = list(connection.read(payload_length))
-                    checksum = list(connection.read(1))
+                # Reading from backpack
+                packet = list(connection.read(8))
+                if len(packet) == 8:
+                    if packet[:3] == [ord("$"), ord("X"), ord("<")]:
+                        mode = self.combine_bytes(packet[4], packet[5])
+                        payload_length = self.combine_bytes(packet[6], packet[7])
+                        payload = list(connection.read(payload_length))
+                        checksum = list(connection.read(1))
 
-                    # Monitor SET_RECORDING_STATE for controlling race
-                    if mode == msptypes.MSP_ELRS_BACKPACK_SET_RECORDING_STATE:
-                        if payload[0] == 0x00:
-                            gevent.spawn(self.stop_race)
-                        elif payload[0] == 0x01:
-                            gevent.spawn(self.start_race)
+                        # Monitor SET_RECORDING_STATE for controlling race
+                        if mode == msptypes.MSP_ELRS_BACKPACK_SET_RECORDING_STATE:
+                            if payload[0] == 0x00:
+                                gevent.spawn(self.stop_race)
+                            elif payload[0] == 0x01:
+                                gevent.spawn(self.start_race)
 
-            gevent.sleep(0.01)
+                gevent.sleep(0.01)
+
+        except KeyboardInterrupt:
+            logger.error("Stopping blackpack connector greenlet")
+
+        except serial.serialutil.SerialException:
+            error_message = "Failed to properly communicate with the ELRS backpack. Disabling the backpack connection; rescan to re-enable."
+            logger.error(error_message)
+            self._rhapi.ui.message_alert(self._rhapi.language.__(error_message))
+
+        finally:
+            connection.close()
+            self._backpack_connected = False
 
     #
     # Backpack message generation
@@ -210,21 +235,8 @@ class elrsBackpack(VRxController):
         return col
 
     def queue_add(self, msp):
-        if self._backpack_connected is False:
-            return
-
-        try:
-            self._backpack_queue.put(msp, block=False)
-        except gevent.queue.Full:
-            if self._queue_full is False:
-                self._queue_full = True
-                message = "ERROR: ELRS Backpack not responding. Please reboot the server to attempt to reconnect."
-                self._rhapi.ui.message_alert(self._rhapi.language.__(message))
-        else:
-            if self._queue_full is True:
-                self._queue_full = False
-                message = "ELRS Backpack has start responding again."
-                self._rhapi.ui.message_notify(self._rhapi.language.__(message))
+        if self._backpack_connected:
+            self._backpack_queue.put(msp)
 
     def send_msp(self, msp):
         self.queue_add(msp)
@@ -241,11 +253,13 @@ class elrsBackpack(VRxController):
         message.set_payload([0])
         self.send_msp(message.get_msp())
 
-    def send_clear(self):
+    def send_clear(self, attempts=1):
         message = msp_message()
         message.set_function(msptypes.MSP_ELRS_SET_OSD)
         message.set_payload([0x02])
-        self.send_msp(message.get_msp())
+
+        for attempt in range(attempts):
+            self.send_msp(message.get_msp())
 
     def send_msg(self, row, col, str):
         payload = [0x03, row, col, 0]
@@ -257,13 +271,15 @@ class elrsBackpack(VRxController):
         message.set_payload(payload)
         self.send_msp(message.get_msp())
 
-    def send_display(self):
+    def send_display(self, attempts=1):
         message = msp_message()
         message.set_function(msptypes.MSP_ELRS_SET_OSD)
         message.set_payload([0x04])
-        self.send_msp(message.get_msp())
 
-    def send_clear_row(self, row):
+        for attempt in range(attempts):
+            self.send_msp(message.get_msp())
+
+    def send_clear_row(self, row, attempts=1):
         payload = [0x03, row, 0, 0]
         for x in range(50):
             payload.append(0)
@@ -271,7 +287,9 @@ class elrsBackpack(VRxController):
         message = msp_message()
         message.set_function(msptypes.MSP_ELRS_SET_OSD)
         message.set_payload(payload)
-        self.send_msp(message.get_msp())
+
+        for attempt in range(attempts):
+            self.send_msp(message.get_msp())
 
     def activate_bind(self, _args):
         message = "Activating backpack's bind mode..."
@@ -322,7 +340,7 @@ class elrsBackpack(VRxController):
     #
 
     def onStartup(self, _args):
-        gevent.spawn(self.connection_search)
+        gevent.spawn(self.connection_search, {"from_ui": False})
 
     def onPilotAlter(self, args):
         pilot_id = args["pilot_id"]
@@ -331,57 +349,86 @@ class elrsBackpack(VRxController):
 
     def onRaceStage(self, args):
 
-        # Setup heat if not done already
-        self.clear_sendUID()
+        if not self._backpack_connected:
+            return
 
+        use_heat_name = self._rhapi.db.option("_heat_name") == "1"
+        use_round_num = self._rhapi.db.option("_round_num") == "1"
+        use_class_name = self._rhapi.db.option("_class_name") == "1"
+        use_event_name = self._rhapi.db.option("_event_name") == "1"
+
+        # Pull heat name and rounds
         heat_data = self._rhapi.db.heat_by_id(args["heat_id"])
         if heat_data:
             class_id = heat_data.class_id
-            heat_name = heat_data.name
+            heat_name = heat_data.display_name
+            round_num = self._rhapi.db.heat_max_round(args["heat_id"]) + 1
         else:
             class_id = None
             heat_name = None
+            round_num = None
+
+        # Check class name
         if class_id:
             raceclass = self._rhapi.db.raceclass_by_id(class_id)
+            class_name = raceclass.display_name
         else:
             raceclass = None
-        if raceclass:
-            class_name = raceclass.name
-        else:
             class_name = None
 
-        show_heat_name = self._rhapi.db.option("_heat_name") == "1"
-        if show_heat_name and heat_data and class_name and heat_name:
+        # Generate heat message
+        heat_name_row = self._rhapi.db.option("_heatname_row")
+        if all([use_heat_name, use_round_num, heat_name, round_num]):
             round_trans = self._rhapi.__("Round")
-            round_num = self._rhapi.db.heat_max_round(args["heat_id"]) + 1
-            if round_num > 1:
-                race_name = f"x {class_name.upper()} | {heat_name.upper()} | {round_trans.upper()} {round_num} w"
-            else:
-                race_name = f"x {class_name.upper()} | {heat_name.upper()} w"
-        elif show_heat_name and heat_data and heat_name:
-            race_name = f"x {heat_name.upper()} w"
+            heat_message = (
+                f"x {heat_name.upper()} | {round_trans.upper()} {round_num} w"
+            )
+            heat_start_col = self.centerOSD(len(heat_message))
+            heat_message_parms = (heat_name_row, heat_start_col, heat_message)
+        elif use_heat_name and heat_name:
+            heat_message = f"x {heat_name.upper()} w"
+            heat_start_col = self.centerOSD(len(heat_message))
+            heat_message_parms = (heat_name_row, heat_start_col, heat_message)
+
+        # Generate class message
+        class_name_row = self._rhapi.db.option("_classname_row")
+        if use_class_name and class_name:
+            class_message = f"x {class_name.upper()} w"
+            class_start_col = self.centerOSD(len(class_message))
+            class_message_parms = (class_name_row, class_start_col, class_message)
+
+        # Generate event message
+        event_name_row = self._rhapi.db.option("_eventname_row")
+        event_name = self._rhapi.db.option("eventName")
+        if use_event_name and event_name:
+            event_name = self._rhapi.db.option("eventName")
+            event_message = heat_message = f"x {event_name.upper()} w"
+            event_start_col = self.centerOSD(len(heat_message))
+            event_message_parms = (event_name_row, event_start_col, event_message)
+
+        start_col = self.centerOSD(len(self._rhapi.db.option("_racestage_message")))
+        stage_mesage = (
+            self._rhapi.db.option("_status_row"),
+            start_col,
+            self._rhapi.db.option("_racestage_message"),
+        )
 
         # Send stage message to all pilots
         def arm(pilot_id):
             uid = self.get_pilot_UID(pilot_id)
-            start_col1 = self.centerOSD(
-                len(self._rhapi.db.option("_racestage_message"))
-            )
-            if show_heat_name and heat_name:
-                start_col2 = self.centerOSD(len(race_name))
-
             self._queue_lock.acquire()
             self.set_sendUID(uid)
             self.send_clear()
-            self.send_msg(
-                self._rhapi.db.option("_status_row"),
-                start_col1,
-                self._rhapi.db.option("_racestage_message"),
-            )
-            if show_heat_name and heat_name:
-                self.send_msg(
-                    self._rhapi.db.option("_announcement_row"), start_col2, race_name
-                )
+
+            # Send messages to backpack
+            self.send_msg(*stage_mesage)
+            if use_heat_name and heat_name:
+                self.send_msg(*heat_message_parms)
+            if use_class_name and class_name:
+                self.send_msg(*class_message_parms)
+            if use_event_name and event_name:
+                self.send_msg(*event_message_parms)
+
             self.send_display()
             self.clear_sendUID()
             self._queue_lock.release()
@@ -399,19 +446,24 @@ class elrsBackpack(VRxController):
 
     def onRaceStart(self, _args):
 
+        if not self._backpack_connected:
+            return
+
         def start(pilot_id):
             uid = self.get_pilot_UID(pilot_id)
             start_col = self.centerOSD(len(self._rhapi.db.option("_racestart_message")))
 
             self._queue_lock.acquire()
             self.set_sendUID(uid)
-            self.send_clear()
+
+            self.send_clear(2)
+
             self.send_msg(
                 self._rhapi.db.option("_status_row"),
                 start_col,
                 self._rhapi.db.option("_racestart_message"),
             )
-            self.send_display()
+            self.send_display(2)
             self.clear_sendUID()
             self._queue_lock.release()
 
@@ -419,8 +471,8 @@ class elrsBackpack(VRxController):
 
             self._queue_lock.acquire()
             self.set_sendUID(uid)
-            self.send_clear_row(self._rhapi.db.option("_status_row"))
-            self.send_display()
+            self.send_clear_row(self._rhapi.db.option("_status_row"), 2)
+            self.send_display(2)
             self.clear_sendUID()
             self._queue_lock.release()
 
@@ -436,6 +488,9 @@ class elrsBackpack(VRxController):
                 gevent.spawn(start, seat_pilots[seat])
 
     def onRaceFinish(self, _args):
+
+        if not self._backpack_connected:
+            return
 
         def finish(pilot_id):
             uid = self.get_pilot_UID(pilot_id)
@@ -480,6 +535,9 @@ class elrsBackpack(VRxController):
 
     def onRaceStop(self, _args):
 
+        if not self._backpack_connected:
+            return
+
         def land(pilot_id):
             uid = self.get_pilot_UID(pilot_id)
             start_col = self.centerOSD(len(self._rhapi.db.option("_racestop_message")))
@@ -510,6 +568,9 @@ class elrsBackpack(VRxController):
                     gevent.spawn(land, seat_pilots[seat])
 
     def onRaceLapRecorded(self, args):
+
+        if not self._backpack_connected:
+            return
 
         def update_pos(result):
             pilot_id = result["pilot_id"]
@@ -644,6 +705,9 @@ class elrsBackpack(VRxController):
 
     def onLapDelete(self, _args):
 
+        if not self._backpack_connected:
+            return
+
         def delete(pilot_id):
             uid = self.get_pilot_UID(pilot_id)
             self._queue_lock.acquire()
@@ -667,6 +731,9 @@ class elrsBackpack(VRxController):
 
     def onRacePilotDone(self, args):
 
+        if not self._backpack_connected:
+            return
+
         def done(result, win_condition):
 
             pilot_id = result["pilot_id"]
@@ -686,7 +753,7 @@ class elrsBackpack(VRxController):
             )
 
             if self._rhapi.db.option("_results_mode") == "1":
-                placement_message = F'PLACEMENT: {result["position"]}'
+                placement_message = f'PLACEMENT: {result["position"]}'
                 place_col = self.centerOSD(len(placement_message))
                 self.send_msg(results_row1, place_col, placement_message)
 
@@ -698,7 +765,7 @@ class elrsBackpack(VRxController):
                     win_message = f'TOTAL TIME: {result["total_time"]}'
                 else:
                     win_message = f'LAPS COMPLETED: {result["laps"]}'
-                    
+
                 win_col = self.centerOSD(len(win_message))
                 self.send_msg(results_row2, win_col, win_message)
 
@@ -727,6 +794,9 @@ class elrsBackpack(VRxController):
 
     def onLapsClear(self, _args):
 
+        if not self._backpack_connected:
+            return
+
         def clear(pilot_id):
             uid = self.get_pilot_UID(pilot_id)
             self._queue_lock.acquire()
@@ -748,6 +818,9 @@ class elrsBackpack(VRxController):
                 gevent.spawn(clear, seat_pilots[seat])
 
     def onSendMessage(self, args):
+
+        if not self._backpack_connected:
+            return
 
         def notify(pilot):
             uid = self.get_pilot_UID(pilot)

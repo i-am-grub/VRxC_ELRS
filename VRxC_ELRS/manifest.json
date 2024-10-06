@@ -1,12 +1,12 @@
 {
     "name": "VRxC ELRS",
-    "author" : "Bryce \"GRUBBY\" Gruber",
+    "author" : "GRUBBY",
     "author_uri" : "https://github.com/i-am-grub",
     "description" : "VRx Control for the ExpressLRS Backpack",
     "info_uri" : "https://github.com/i-am-grub/VRxC_ELRS",
     "license" : "MIT",
     "license_uri" : "https://github.com/i-am-grub/VRxC_ELRS/blob/master/LICENSE",
-    "version" : "1.1.0-dev",
+    "version" : "1.2.0",
     "required_rhapi_version" : "1.1",
     "update_uri" : null,
     "text_domain" : null
