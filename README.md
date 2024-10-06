@@ -8,25 +8,25 @@ This is a plugin being developed for the RotorHazard timing system with the foll
 ## How does it work?
 
 This plugin is built to control to an external device or chip running the ExpressLRS Timer backpack over a serial port. This allows the
-timing system to communicate with other devices with an ELRS backpack built into them. This allows for the timer to receive state messages
+timing system to communicate with other devices with an ELRS backpack built into them giving the timer the ability to receive state messages
 from a pilot's transmitter, or send messages to display OSD information directly to a pilot's goggles.
 
 ## I'm a pilot. What do I need to setup?
 
 Currently, the only device supported for receiving OSD race messages from the ELRS backpack is the HDZero goggles. They come with
-an internal ESP32 chip installed for the ExpressLRS backpack. Update the HDZero's video receiver backpack to version `1.5.0` or higher of the by either using the
+an internal ESP32 chip installed for the ExpressLRS backpack. Update the goggles's video receiver backpack to the latest version by either using the
 [ExpressLRS Configurator](https://github.com/ExpressLRS/ExpressLRS-Configurator/releases) or the 
 [ExpressLRS Web Flasher](https://expresslrs.github.io/web-flasher/). Follow [this guide](https://www.expresslrs.org/hardware/backpack/hdzero-goggles/) for
-the first time installation process. If you need assistance with the installation or upgrading your firmware, 
+the first time installation process. If assistance is needed with the installation or upgrading the goggle firmware, 
 ask for help in the `help-and-support` channels of the [ExpressLRS Discord](https://discord.gg/expresslrs).
 
 > [!IMPORTANT]
-> REMEMBER YOUR BACKPACK BIND PRHASE: The timer's backpack will use it to send OSD messages from the timer to your HDZero goggles.
-> You will likely need to provide the bind phrase to the race director.
+> REMEMBER YOUR BACKPACK BIND PHRASE: The timer's backpack will use it to send OSD messages from the timer to your HDZero goggles.
+> You will likely need to provide the bind phrase to the race director if you want OSD information at your race.
 
 > [!NOTE]
-> You can set your backpack bind phrase to either be the same or different from the ExpressLRS radio protocol. Setting the same bind phrase
-> will not cause the backpack to interfere with the radio protocol.
+> The backpack bind phrase can either be the same or different than the bind phrase used for the ExpressLRS radio protocol. 
+> Setting the same bind phrase will not cause the backpack to interfere with the radio protocol.
 
 ## Setup Directions for Race Directors
 
@@ -46,15 +46,22 @@ help improve the range of the timer's backpack.
 > [!TIP]
 > While other specific development boards with similar chipsets may be supported by the targets in the table, it is not guaranteed that they work.
 > For example, the Seeed Studio XIAO ESP32C3/S3 board do not work with the targets listed above, but when using the 
-> [ExpressLRS Toolchain](https://www.expresslrs.org/software/toolchain-install/) for building the backpack firmware, you can
-> change the platformio settings to build the firmware to use the XIAO boards for the timer backpack.
+> [ExpressLRS Toolchain](https://www.expresslrs.org/software/toolchain-install/) for building the backpack firmware,
+> the platformio settings can be changed to build compatible firmware for XIAO boards.
 
-#### Non-NuclearHazard Hardware (ESP32/ESP82 Devkits)
+> [!NOTE]
+> While a normal ExpressLRS reciever can be flashed with backpack firmware and be used for the timer backpack, this is not recommended.
+> The primary reason behind this is that the ELRS backpack is based on ESPNow which uses the WIFI hardware of the ESP32/ESP82.
+> Recievers typically have a small ceramic antenna installed seperately for connecting to the web UI over WIFI; this antenna is
+> different than the the one(s) reserved for the radio protocol. The ceramic antennta would likely be less performant over an ESP32 
+> devkit with an external WIFI antenna connected.
+
+#### Flashing ESP32/ESP82 Devkits
 
 To build and flash the firmware, use the [ExpressLRS Configurator](https://github.com/ExpressLRS/ExpressLRS-Configurator/releases) or the [ExpressLRS Web Flasher](https://expresslrs.github.io/web-flasher/)
-1. Connect the device to your computer over USB.
+1. Connect the device to the computer over USB.
 
-> If Windows doesn't recognize the device connected over USB, you may need to install some drivers for the device.
+> If Windows doesn't recognize the device connected over USB, a driver install or update may be required.
 > Espressif designed boards typically either use the [CP210x](https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers) or
 > [FTDI](https://ftdichip.com/drivers/vcp-drivers/) USB to serial converter chips
 
@@ -63,38 +70,38 @@ To build and flash the firmware, use the [ExpressLRS Configurator](https://githu
     - If using the Web Flasher, select `Race Timer` under the Backpack Firmware section 
 3. Select the 1.5.0 (or a newer) release 
 4. Select the RotorHazard device category
-5. Select the target for your device
+5. Select the target for the device
 6. Select the UART flashing method
 7. Enter the backpack bind phrase (for race control from the director's transmitter)
-8. Select the COM port for your device
+8. Select the COM port for the device
 9. Build and flash the firmware
 
-#### NuclearHazard Hardware
+#### Flashing NuclearHazard Hardware
 
-To build the firmware, use the [ExpressLRS Configurator](https://github.com/ExpressLRS/ExpressLRS-Configurator/release)
+To build the firmware, use the [ExpressLRS Configurator](https://github.com/ExpressLRS/ExpressLRS-Configurator/release) or the [ExpressLRS Web Flasher](https://expresslrs.github.io/web-flasher/)
 
 1. Select the backpack firmware section
    - If using the configurator, select `Backpack` on the left side menu. 
    - If using the Web Flasher, select `Race Timer` under the Backpack Firmware section 
 2. Select the 1.5.0 release (or a newer version) 
 3. Select the RotorHazard device category
-4. Select NuclearHazard as your device
+4. Select NuclearHazard as the device
 5. Select the method
     - If using the configurator, select `WIFI`. 
     - If using the Web Flasher, select `Local Download` 
 6. Enter the backpack bind phrase (for race control from the director's transmitter)
 7. Build the firmware
-8. Follow [this guide](https://nuclearquads.github.io/vrxc) to flash the on board ESP32. Instead of downloading the backpack bin files, use the files you built with the configurator.
+8. Follow [this guide](https://nuclearquads.github.io/vrxc) to flash the on board ESP32. Instead of downloading the backpack bin files, use the files built with the configurator.
 
 ### Installing the RotorHazard Plugin
 
 1. Verify RotorHazard v4.1.0+ is installed on the timer
-2. Follow the instructions on the [latest release](https://github.com/i-am-grub/VRxC_ELRS/releases) of the plugin to complete the install.
+2. Follow the instructions in the [latest release](https://github.com/i-am-grub/VRxC_ELRS/releases) of the plugin to complete the installation process.
 
 ### Control the Race from the Race Director's Transmitter
 
 There is a feature to control the race from the race director's transmitter by tracking the position of the `DVR Rec` switch setup within the transmitter's backpack. It currently works
-by binding the race timer's backpack to the race director's backpack bind phrase similarly like you would do with the transmitter and VRx backpacks. 
+by binding the race timer's backpack to the race director's backpack bind phrase similar to the process used with the transmitter and VRx backpacks. 
 
 Currently only starting and stopping the race are supported. Setting up this feature will not prevent other users from receiving OSD messages.
 
@@ -115,7 +122,9 @@ Currently only starting and stopping the race are supported. Setting up this fea
     3. Click the `Start Backpack Bind` button.
     4. Within the ExpressLRS Lua script on the transmitter, click `Bind`
 
-To test to see if the backpack was bound successfully, navigate to the `Race` tab within RotorHazard, and use the `DVR Rec` switch to start the race. `Race Control from Transmitter` 
+To test to see if the backpack was bound successfully, navigate to the `Race` page within RotorHazard, and use the `DVR Rec` switch to start the race. 
+[Start Race from Transmitter](https://github.com/i-am-grub/VRxC_ELRS?tab=readme-ov-file#start-race-from-transmitter--checkbox)
+or [Stop Race from Transmitter](https://github.com/i-am-grub/VRxC_ELRS?tab=readme-ov-file#stop-race-from-transmitter--checkbox) 
 will need to be enabled under `ELRS Backpack General Settings`
 
 > [!TIP]
@@ -125,8 +134,8 @@ will need to be enabled under `ELRS Backpack General Settings`
 
 ## 3D Printed Case
 
-If you are looking to have a case for an externally connected ESP32-DevKitC-1U board, users have commonly liked to use the
-following 3D printable case available on [Printables](https://www.printables.com/model/762529-esp32-wroom-32u-casing)
+Some users have like to use the following 3D printable case available on [Printables](https://www.printables.com/model/762529-esp32-wroom-32u-casing) for
+an externally connected `ESP32-DevKitC-1U` board.
 
 ![Case](docs/3DPrint/wirex-1.webp)
 
@@ -197,7 +206,11 @@ Will display OSD messages on HDZero goggles with a matching bind phrase. Used fo
 
 ### Start Backpack WIFI : BUTTON
 
-Starts the backpack's WIFI mode. Used for over-the-air firmware updates. Open the URL http://elrs_timer.local on your browser.
+Starts the backpack's WIFI mode. Used for over-the-air firmware updates. 
+
+> [!TIP]
+> To connect to the backpack's web user interface, verify the backpack is setup to connect to the same network as the device used to access the web user interface,
+> or connect the device to the wireless network the backpack created. Open the URL http://elrs_timer.local in the device's browser to connect to the web user interface.
 
 ## ELRS Backpack OSD Settings
 
