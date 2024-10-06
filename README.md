@@ -183,11 +183,11 @@ Turns the pilot's ELRS OSD on/off
 
 ### Start Race from Transmitter : CHECKBOX
 
-Allows the race director to start the race from their transmitter. Please navigate to [here](https://github.com/i-am-grub/VRxC_ELRS#control-the-race-from-the-race-directors-transmitter) for binding the backpack.
+Allows the race director to start the race from their transmitter. Please navigate [here](https://github.com/i-am-grub/VRxC_ELRS#control-the-race-from-the-race-directors-transmitter) for binding the backpack.
 
 ### Stop Race from Transmitter : CHECKBOX
 
-Allows the race director to stop the race from their transmitter. Please navigate to [here](https://github.com/i-am-grub/VRxC_ELRS#control-the-race-from-the-race-directors-transmitter) for binding the backpack.
+Allows the race director to stop the race from their transmitter. Please navigate [here](https://github.com/i-am-grub/VRxC_ELRS#control-the-race-from-the-race-directors-transmitter) for binding the backpack.
 
 ### Backpack Rescan : BUTTON
 
@@ -210,14 +210,14 @@ Starts the backpack's WIFI mode. Used for over-the-air firmware updates.
 
 > [!TIP]
 > To connect to the backpack's web user interface, verify the backpack is setup to connect to the same network as the device used to access the web user interface,
-> or connect the device to the wireless network the backpack created. Open the URL http://elrs_timer.local in the device's browser to connect to the web user interface.
+> or connect the device to the wireless network the backpack created. Open `http://elrs_timer.local` in the device's browser to connect to the web user interface.
 
 ## ELRS Backpack OSD Settings
 
 ![OSD Settings](docs/osd_settings.png)
 
 > [!NOTE]
-> It is a goal of this project to eventually move all the OSD settings in this section to be pilot configurable through the ExpressLRS VRx backpack's web UI.
+> It is a goal of this project to eventually move all the OSD settings in this section to be pilot configurable through the ExpressLRS VRx backpack's web user interface.
 > The current implementation is noted to be a work around until enough progress has been completed on the VRx backpack for individual pilot configuration.
 
 ### Show Heat Name : CHECKBOX
