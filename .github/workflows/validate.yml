@@ -1,0 +1,16 @@
+name: Validate Plugin Manifest
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    name: Run RHFest validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run RHFest validation
+        uses: docker://ghcr.io/dutchdronesquad/rhfest-action:v1
