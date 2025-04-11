@@ -1,7 +1,6 @@
 import logging
 import hashlib
 import serial
-from enum import IntEnum
 
 import serial.serialutil
 import serial.tools.list_ports
@@ -12,14 +11,13 @@ import gevent.queue
 import RHUtils
 from RHRace import RaceStatus, WinCondition
 from VRxControl import VRxController
-import util.RH_GPIO as RH_GPIO
 
-from plugins.VRxC_ELRS.msp import msptypes, msp_message
+from .msp import msptypes, msp_message
 
 logger = logging.getLogger(__name__)
 
 
-class elrsBackpack(VRxController):
+class ELRSBackpack(VRxController):
 
     _queue_lock = gevent.lock.RLock()
     _backpack_connected = False
