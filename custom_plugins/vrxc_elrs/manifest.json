@@ -3,9 +3,9 @@
     "name": "VRxC ELRS",
     "author": "Bryce \"GRUBBY\" Gruber",
     "author_uri": "https://github.com/i-am-grub",
-    "description": "VRx Control for the ExpressLRS Backpack",
+    "description": "Integrate the ExpressLRS Backpack into RotorHazard",
     "documentation_uri": "https://github.com/i-am-grub/VRxC_ELRS",
     "required_rhapi_version": "1.2",
-    "version": "1.3.1",
+    "version": "1.4.0",
     "category": ["OSD & VRx Control"]
 }
