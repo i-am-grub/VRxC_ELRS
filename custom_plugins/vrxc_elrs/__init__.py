@@ -1,11 +1,10 @@
 import logging
-import gevent
 
-from eventmanager import Evt
-from RHUI import UIField, UIFieldType
-import util.RH_GPIO as RH_GPIO
 import RHAPI
+from eventmanager import Evt
+from RHUI import UIField, UIFieldSelectOption, UIFieldType
 
+from .connections import ConnectionTypeEnum
 from .elrs_backpack import ELRSBackpack
 
 logger = logging.getLogger(__name__)
@@ -13,21 +12,14 @@ logger = logging.getLogger(__name__)
 
 def initialize(rhapi: RHAPI.RHAPI):
 
-    if RH_GPIO.is_real_hw_GPIO():
-        logger.info("Turning on GPIO pins for NuclearHazard boards")
-        RH_GPIO.setmode(RH_GPIO.BCM)
-        RH_GPIO.setup(16, RH_GPIO.OUT, initial=RH_GPIO.HIGH)
-        gevent.sleep(0.5)
-        RH_GPIO.setup(11, RH_GPIO.OUT, initial=RH_GPIO.HIGH)
-        gevent.sleep(0.5)
-        RH_GPIO.output(11, RH_GPIO.LOW)
-        gevent.sleep()
-        RH_GPIO.output(11, RH_GPIO.HIGH)
-
     controller = ELRSBackpack("elrs", "ELRS", rhapi)
 
-    rhapi.events.on(Evt.VRX_INITIALIZE, controller.registerHandlers)
-    rhapi.events.on(Evt.PILOT_ALTER, controller.onPilotAlter)
+    rhapi.events.on(Evt.VRX_INITIALIZE, controller.register_handlers)
+    rhapi.events.on(Evt.PILOT_ALTER, controller.pilot_alter)
+    rhapi.events.on(
+        Evt.STARTUP, controller.start_recieve_loop, name="start_recieve_loop"
+    )
+    rhapi.events.on(Evt.STARTUP, controller.start_connection, name="start_connection")
 
     #
     # Setup UI
@@ -68,6 +60,28 @@ def initialize(rhapi: RHAPI.RHAPI):
         field_type=UIFieldType.CHECKBOX,
     )
     rhapi.fields.register_option(_race_stop, "elrs_settings")
+
+    _socket_ip = UIField(
+        "_socket_ip",
+        "ELRS Netpack IP Address",
+        desc="IP Address of ELRS Netpack",
+        field_type=UIFieldType.TEXT,
+    )
+    rhapi.fields.register_option(_socket_ip, "elrs_settings")
+
+    conn_opts = [UIFieldSelectOption(value=None, label="")]
+    for type_ in ConnectionTypeEnum:
+        race_selection = UIFieldSelectOption(value=type_.id_, label=type_.name)
+        conn_opts.append(race_selection)
+
+    _conn_opt = UIField(
+        "_conn_opt",
+        "Backback Connection Type",
+        desc="Select the type of connection to use for the backpack",
+        field_type=UIFieldType.SELECT,
+        options=conn_opts,
+    )
+    rhapi.fields.register_option(_conn_opt, "elrs_settings")
 
     _heat_name = UIField(
         "_heat_name",
@@ -301,16 +315,25 @@ def initialize(rhapi: RHAPI.RHAPI):
 
     rhapi.ui.register_quickbutton(
         "elrs_settings",
-        "rescan",
-        "Backpack Rescan",
-        controller.connection_search,
-        args={"from_ui": True},
+        "bp_connect",
+        "Backpack Connect",
+        controller.start_connection,
+    )
+    rhapi.ui.register_quickbutton(
+        "elrs_settings",
+        "bp_disconnect",
+        "Backpack Disconnect",
+        controller.disconnect,
     )
     rhapi.ui.register_quickbutton(
         "elrs_settings", "enable_bind", "Start Backpack Bind", controller.activate_bind
     )
+
     rhapi.ui.register_quickbutton(
-        "elrs_settings", "test_osd", "Test Bound Backpack's OSD", controller.test_osd
+        "elrs_settings",
+        "test_osd",
+        "Test Bound Backpack's OSD",
+        controller.test_bind_osd,
     )
     rhapi.ui.register_quickbutton(
         "elrs_settings", "enable_wifi", "Start Backpack WiFi", controller.activate_wifi

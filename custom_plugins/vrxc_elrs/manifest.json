@@ -3,7 +3,7 @@
     "name": "VRxC ELRS",
     "author": "Bryce \"GRUBBY\" Gruber",
     "author_uri": "https://github.com/i-am-grub",
-    "description": "Integrate the ExpressLRS Backpack into RotorHazard",
+    "description": "The ExpressLRS Backpack integrated into RotorHazard",
     "documentation_uri": "https://github.com/i-am-grub/VRxC_ELRS",
     "required_rhapi_version": "1.2",
     "version": "1.4.0",
