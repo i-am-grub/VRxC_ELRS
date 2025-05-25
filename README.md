@@ -3,7 +3,9 @@
 This is a plugin being developed for the RotorHazard timing system with the following features: 
 - [X] Send OSD messages to pilots using compatible equipment (such as the [HDZero goggles](https://www.youtube.com/watch?v=VXwaUoA16jc)) 
 - [X] Allows for the race manager to [start the race from their transmitter](https://github.com/i-am-grub/VRxC_ELRS?tab=readme-ov-file#control-the-race-from-the-race-directors-transmitter)
-- [ ] Automatically switching pilot's video channels and output power 
+- [ ] Pilot's `ready` status from their transmitter
+
+See [here](https://github.com/i-am-grub/VRxC_ELRS/issues/5) for the plugin's current roadmap
 
 ## How does it work?
 
@@ -42,6 +44,7 @@ help improve the range of the timer's backpack.
 | EP32C3 Module (DIY)   | [ESP32-C3-DevKitM-1U](https://www.digikey.com/en/products/detail/espressif-systems/ESP32-C3-DEVKITM-1U/15198974)      |
 | EP32S3 Module (DIY)   | [ESP32-S3-DevKitC-1U](https://www.digikey.com/en/products/detail/espressif-systems/ESP32-S3-DEVKITC-1U-N8R8/16162636) |
 | NuclearHazard         | [NuclearHazard Board](https://www.etsy.com/listing/1428199972/nuclearhazard-core-kit-case-and-rx-sold) v7 or newer    |
+| [ELRS-Netpack](https://github.com/i-am-grub/elrs-netpack) (DIY) | [Waveshare ESP32-S3 Ethernet](https://www.waveshare.com/esp32-s3-eth.htm)   |
 
 > [!TIP]
 > While other specific development boards with similar chipsets may be supported by the targets in the table, it is not guaranteed that they work.
@@ -92,6 +95,14 @@ To build the firmware, use the [ExpressLRS Configurator](https://github.com/Expr
 6. Enter the backpack bind phrase (for race control from the director's transmitter)
 7. Build the firmware
 8. Follow [this guide](https://nuclearquads.github.io/vrxc) to flash the on board ESP32. Instead of downloading the backpack bin files, use the files built with the configurator.
+
+#### Flashing ELRS Netpack
+
+1. Download the [netpack-installer](https://github.com/i-am-grub/netpack-installer) plugin from the community plugins
+list
+2. Connect the required ESP32 devkit to your timer
+3. In the `ELRS Netpack Firmware` panel (found on the `Settings` page), select the serial port of the connected device
+and press the `Flash Netpack Firmware` button.
 
 ### Installing the RotorHazard Plugin
 
