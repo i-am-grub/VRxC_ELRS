@@ -3,6 +3,7 @@ import logging
 
 import gevent
 import gevent.lock
+import gevent.socket as socket
 import util.RH_GPIO as RH_GPIO
 from gevent.queue import Queue
 from RHRace import RaceStatus, WinCondition
@@ -111,9 +112,10 @@ class ELRSBackpack(VRxController):
                 self._rhapi.ui.message_notify(self._rhapi.language.__(message))
 
         elif con == ConnectionTypeEnum.SOCKET:
-            ip = self._rhapi.db.option("_socket_ip", None)
-            if ip is not None:
-                self._establish_connection(con.type_, ip_addr=ip)
+            addr = self._rhapi.db.option("_socket_ip", None)
+            if addr is not None:
+                ip_addr = socket.gethostbyname(addr)
+                self._establish_connection(con.type_, ip_addr=ip_addr)
             else:
                 message = "IP Address for socket not provided"
                 self._rhapi.ui.message_notify(self._rhapi.language.__(message))

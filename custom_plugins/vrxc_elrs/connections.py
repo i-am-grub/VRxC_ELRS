@@ -107,7 +107,6 @@ class SerialConnection:
             gevent.sleep(0.2)
 
             data = connection.read_all()
-            print(data)
             for packet in MSPPacket.packets_from_bytes(data):
                 if (
                     packet.type_ == MSPPacketType.RESPONSE

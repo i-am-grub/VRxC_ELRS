@@ -63,8 +63,9 @@ def initialize(rhapi: RHAPI.RHAPI):
 
     _socket_ip = UIField(
         "_socket_ip",
-        "ELRS Netpack IP Address",
-        desc="IP Address of ELRS Netpack",
+        "ELRS Netpack Address",
+        desc="Hostanme or IP Address of the ELRS Netpack",
+        value="elrs-netpack",
         field_type=UIFieldType.TEXT,
     )
     rhapi.fields.register_option(_socket_ip, "elrs_settings")
