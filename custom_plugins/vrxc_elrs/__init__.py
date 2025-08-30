@@ -61,6 +61,14 @@ def initialize(rhapi: RHAPI.RHAPI):
     )
     rhapi.fields.register_option(_race_stop, "elrs_settings")
 
+    _autosave_on_stop = UIField(
+        "_autosave_on_stop",
+        "Autosave on stop",
+        desc="Automatically save the race when stopping from the transmitter",
+        field_type=UIFieldType.CHECKBOX,
+    )
+    rhapi.fields.register_option(_autosave_on_stop, "elrs_settings")
+
     _socket_ip = UIField(
         "_socket_ip",
         "ELRS Netpack Address",
