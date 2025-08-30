@@ -200,6 +200,10 @@ Allows the race director to start the race from their transmitter. Please naviga
 
 Allows the race director to stop the race from their transmitter. Please navigate [here](https://github.com/i-am-grub/VRxC_ELRS#control-the-race-from-the-race-directors-transmitter) for binding the backpack.
 
+### Autosave on stop : CHECKBOX
+
+Automatically save the race when stopping from the transmitter
+
 ### Backpack Rescan : BUTTON
 
 Triggers the timer to scan the serial devices for a backpack device. Only works if the timer is not already connected to a backpack device
