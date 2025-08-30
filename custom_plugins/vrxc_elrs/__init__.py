@@ -66,6 +66,7 @@ def initialize(rhapi: RHAPI.RHAPI):
         "Autosave on stop",
         desc="Automatically save the race when stopping from the transmitter",
         field_type=UIFieldType.CHECKBOX,
+        value="0",
     )
     rhapi.fields.register_option(_autosave_on_stop, "elrs_settings")
 
