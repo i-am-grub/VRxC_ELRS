@@ -7,7 +7,7 @@ import gevent
 import gevent.queue
 import gevent.socket as socket
 import serial
-from serial.tools.list_ports
+import serial.tools.list_ports
 from gevent.queue import Queue
 
 from .msp import MSPPacket, MSPPacketType, MSPTypes
