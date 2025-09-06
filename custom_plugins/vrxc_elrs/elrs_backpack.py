@@ -58,7 +58,10 @@ class ELRSBackpack(VRxController):
         if self._rhapi.db.option("_race_stop") == "1":
             status = self._rhapi.race.status
             if status in (RaceStatus.STAGING, RaceStatus.RACING):
-                self._rhapi.race.stop()
+                if self._rhapi.db.option("_autosave_on_stop") == "1":
+                    self._rhapi.race.save()
+                else:
+                    self._rhapi.race.stop()
 
     #
     # Connection handling
